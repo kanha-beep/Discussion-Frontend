@@ -1,4 +1,4 @@
-export const handleChange = (e, setSections) => {
+export const handleChange = (e, setForm) => {
   const { name, value } = e.target;
-  setSections((p) => ({ ...p, [name]: value }));
+  setForm((p) => ({ ...p, [name]: value }));
 };

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Register Popup Exact</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<button class="open-btn" onclick="openPopup()">Register</button>
+
+<div class="overlay" id="overlay" onclick="closePopup()"></div>
+
+<div class="modal" id="modal">
+
+  <!-- LEFT -->
+  <div class="left">
+    <h1>DiscussionHub</h1>
+    <p>
+      Ask questions, share knowledge,<br>
+      and grow with the community.
+    </p>
+
+    <div class="points">
+      <div>💬 Ask & Answer Questions</div>
+      <div>🎓 Learn from Experts</div>
+      <div>👤 Build Your Profile</div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <span class="close" onclick="closePopup()">×</span>
+
+    <h2>Create Account</h2>
+    <p class="sub">Join the discussion community</p>
+
+    <input type="text" placeholder="Full Name">
+    <input type="email" placeholder="Email Address">
+    <input type="password" placeholder="Password">
+
+    <button class="btn">Register</button>
+
+    <p class="login">
+      Already have an account? <a href="#">Login</a>
+    </p>
+  </div>
+
+</div>
+
+<script>
+function openPopup() {
+  document.getElementById("modal").classList.add("show");
+  document.getElementById("overlay").classList.add("show");
+}
+function closePopup() {
+  document.getElementById("modal").classList.remove("show");
+  document.getElementById("overlay").classList.remove("show");
+}
+</script>
+
+</body>
+</html>
+<style>
+    *{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+
+body{
+  background:transparent;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+/* DEMO BUTTON */
+.open-btn{
+  padding:12px 28px;
+  background:#2f4858;
+  color:#fff;
+  border:none;
+  border-radius:30px;
+  cursor:pointer;
+}
+
+/* OVERLAY */
+.overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  display:none;
+  z-index:10;
+}
+.overlay.show{display:block}
+
+/* MODAL */
+.modal{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%) scale(.95);
+  width:880px;
+  height:500px;
+  background:#fff;
+  border-radius:18px;
+  display:none;
+  overflow:hidden;
+  box-shadow:0 30px 80px rgba(0,0,0,.35);
+  z-index:11;
+}
+.modal.show{
+  display:flex;
+  transform:translate(-50%,-50%) scale(1);
+}
+
+/* LEFT PANEL */
+.left{
+  width:42%;
+  background:#2f4858;
+  color:#fff;
+  padding:60px 45px;
+}
+
+.left h1{
+  font-size:28px;
+  margin-bottom:18px;
+}
+
+.left p{
+  font-size:14px;
+  line-height:1.6;
+  color:#d8e3ea;
+  margin-bottom:40px;
+}
+
+.points div{
+  margin-bottom:18px;
+  font-size:15px;
+}
+
+/* RIGHT PANEL */
+.right{
+  width:58%;
+  padding:60px 50px;
+  position:relative;
+}
+
+.right h2{
+  font-size:26px;
+  margin-bottom:6px;
+}
+
+.sub{
+  font-size:14px;
+  color:#777;
+  margin-bottom:35px;
+}
+
+.right input{
+  width:100%;
+  padding:14px;
+  border:1px solid #ddd;
+  border-radius:8px;
+  margin-bottom:20px;
+  font-size:14px;
+}
+
+.right input:focus{
+  outline:none;
+  border-color:#2f4858;
+}
+
+.btn{
+  width:100%;
+  padding:14px;
+  background:#2f4858;
+  color:#fff;
+  border:none;
+  border-radius:30px;
+  font-size:16px;
+  cursor:pointer;
+  margin-top:5px;
+}
+
+.login{
+  margin-top:22px;
+  font-size:14px;
+  text-align:center;
+}
+
+.login a{
+  text-decoration:none;
+  font-weight:600;
+  color:#2f4858;
+}
+
+/* CLOSE */
+.close{
+  position:absolute;
+  top:22px;
+  right:26px;
+  font-size:26px;
+  cursor:pointer;
+}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .modal{
+    flex-direction:column;
+    height:auto;
+  }
+  .left,.right{
+    width:100%;
+  }
+}
+
+</style>

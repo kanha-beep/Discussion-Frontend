@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login | Discussion Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins',sans-serif;
+}
+body{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+}
+.login-container{
+    width:380px;
+    background:rgba(255,255,255,0.15);
+    backdrop-filter: blur(12px);
+    border-radius:14px;
+    padding:30px;
+    color:black;
+    box-shadow:0 20px 40px rgba(0,0,0,0.3);
+}
+.logo{
+    text-align:center;
+    font-size:26px;
+    font-weight:600;
+    margin-bottom:8px;
+}
+.logo span{
+    color:#283E4A;
+}
+.subtitle{
+    text-align:center;
+    font-size:14px;
+    opacity:.85;
+    margin-bottom:25px;
+}
+.input-group{
+    margin-bottom:15px;
+}
+.input-group label{
+    font-size:13px;
+    margin-bottom:6px;
+    display:block;
+}
+.input-group input{
+    width:100%;
+    border: 2px solid;
+    padding:12px;
+    border:none;
+    outline:none;
+    border-radius:8px;
+    background:rgba(255,255,255,0.2);
+    color:black;
+}
+.input-group input::placeholder{
+    color:#575758;
+    border: 2px solid;
+    padding:10px;
+    border-radius: 8px;
+}
+.options{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:13px;
+    margin-bottom:20px;
+}
+.options input{
+    accent-color:#283E4A;
+}
+.options a{
+    color:#c7d2fe;
+    text-decoration:none;
+}
+.login-btn{
+    width:100%;
+    padding:12px;
+    background:#283E4A;
+    border:none;
+    border-radius:8px;
+    color:white;
+    font-size:15px;
+    font-weight:500;
+    cursor:pointer;
+    transition:.3s;
+}
+.login-btn:hover{
+    background:white;
+    color:black;
+    border: 2px solid;
+    border-radius: 5px;
+}
+.register-text{
+    text-align:center;
+    font-size:16px;
+    margin-top:18px;
+   
+}
+.register-text a{
+    color:#283E4A;
+    text-decoration:none;
+     font-weight: bold;
+
+}
+</style>
+</head>
+<body>
+
+<div class="login-container">
+    <div class="logo"><a href="index.html" style="text-decoration: none; color:#283E4A">Discussion<span>Hub</span></a></div>
+    <div class="subtitle">Login to join the conversation</div>
+
+    <form>
+        <div class="input-group">
+            <label>Email or Username</label>
+            <input type="text" placeholder="Enter email or username" required>
+        </div>
+
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" placeholder="Enter password" required>
+        </div>
+
+        <div class="options">
+            <label>
+                <input type="checkbox"> Remember me
+            </label>
+            <a href="#" style="color: #283E4A;">Forgot password?</a>
+        </div>
+
+        <button class="login-btn" type="submit">Login</button>
+    </form>
+
+    <div class="register-text">
+        Don’t have an account?
+       <a href="register.html">Register now</a>
+    </div>
+</div>
+
+</body>
+</html>

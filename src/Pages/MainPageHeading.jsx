@@ -3,12 +3,12 @@ import React from "react";
 export function MainPageHeading() {
   return (
     <div>
-      <div className="text-center mb-12">
+      <div className="text-center mb-12 container">
         <h1 className="mb-4">
-          Welcome to FSS
+          Welcome to Our Community
         </h1>
         <p className="mx-auto">
-          Choose a subject below to begin your learning journey.
+          A platform where like minded people can connect.
         </p>
       </div>
     </div>
