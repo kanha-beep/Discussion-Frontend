@@ -1,9 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import { useState } from "react";
 import { api } from "../../api.js";
 import { useNavigate, useParams } from "react-router-dom";
 import { handleChange } from "../Components/HandleChange.js";
-export default function DiscussionFormEdit({ user }) {
+import { UserContext } from "../Components/UserContext.js";
+export default function DiscussionFormEdit() {
+  const {user} = useContext(UserContext)
   const { discussionId } = useParams();
   const [disForm, setDisForm] = useState({
     email: "",

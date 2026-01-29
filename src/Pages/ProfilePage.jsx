@@ -1,12 +1,14 @@
-import React from "react";
+import React, { useContext } from "react";
+import { UserContext } from "../Components/UserContext";
 
 export default function ProfilePage() {
+  const { user } = useContext(UserContext);
   return (
     <div className="container-fluid ms-3">
       <h1>Profile Page</h1>
       <div className="row" style={{ height: "40rem" }}>
         {/* 1st div navbar left side */}
-        <div className="col-1 border rounded" style={{margin:"0 -2rem"}}>
+        <div className="col-2 border rounded" style={{ margin: "0 -2rem" }}>
           {/* toggle button */}
           <button
             className="btn btn-outline-primary"
@@ -17,7 +19,7 @@ export default function ProfilePage() {
           </button>
 
           {/* offcanvas navbar */}
-          <div className="offcanvas offcanvas-start" tabIndex="-1" id="sideNav">
+          {/* <div className="offcanvas offcanvas-start" tabIndex="-1" id="sideNav">
             <div className="offcanvas-header">
               <h5 className="offcanvas-title">Menu</h5>
               <button
@@ -32,9 +34,17 @@ export default function ProfilePage() {
                 <li className="list-group-item">Settings</li>
               </ul>
             </div>
+          </div> */}
+          <div className="sidebar">
+            <h5>Menu</h5>
+            <ul className="list-group list-group-flush">
+              <li className="list-group-item">Home</li>
+              <li className="list-group-item">Profile</li>
+              <li className="list-group-item">Settings</li>
+            </ul>
           </div>
         </div>
-        <div className="col-11 border rounded bg-light">
+        <div className="ms-5 col-10 border rounded bg-light">
           {/* navbar of chats - 2nd div*/}
           <div className="border rounded p-2">
             <span>

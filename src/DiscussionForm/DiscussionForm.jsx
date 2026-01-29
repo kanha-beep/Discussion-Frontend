@@ -1,10 +1,12 @@
 import { useLocation } from "react-router-dom";
-import React, { use, useEffect } from "react";
+import React, { use, useContext, useEffect } from "react";
 import { useState } from "react";
 import { api } from "../../api.js";
 import { useNavigate, useParams } from "react-router-dom";
 import { handleChange } from "../Components/HandleChange.js";
-export default function DiscussionFormEdit({ user }) {
+import { UserContext } from "../Components/UserContext.js";
+export default function DiscussionFormEdit() {
+  const { user } = useContext(UserContext);
   const { discussionId } = useParams();
   const location = useLocation();
   console.log("discussion id: ", location?.state?.user);

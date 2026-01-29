@@ -1,14 +1,19 @@
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { api } from "../../api.js";
 import { WrapAsync } from "../Utils/WrapAsync.js";
-export default function Auth({
-  // userRoles,
-  checkAuth,
-  // setIsLoggedIn,
-  setMsg,
-  setMsgType,
-}) {
+import { UserContext } from "../Components/UserContext.js";
+export default function Auth({ checkAuth }) {
+  const {
+    setIsLoggedIn,
+    msg,
+    setMsg,
+    msgType,
+    setMsgType,
+    userRoles,
+    setUserRoles,
+  } = useContext(UserContext);
+
   const [email, setEmail] = useState("");
   const [viewPage, setViewPage] = useState("");
   const [formData, setFormData] = useState({
@@ -22,7 +27,7 @@ export default function Auth({
   const location = useLocation();
   const loginUrl = location?.state?.login;
   console.log("loginUrl: ", loginUrl);
-  const role = location?.state;
+  // const role = location?.state;
   const navigate = useNavigate();
   const [btnDisable, setBtnDisable] = useState(false);
   const [isLogin, setIsLogin] = useState(loginUrl);
@@ -47,7 +52,7 @@ export default function Auth({
           console.log(
             "error in login: ",
             e?.response?.data?.msg,
-            e?.response?.status
+            e?.response?.status,
           );
           if (e?.response?.status === 401) setIsLogin(false);
           alert("Please Register");
@@ -75,7 +80,7 @@ export default function Auth({
       }
     },
     setMsg,
-    setMsgType
+    setMsgType,
   );
   // const handleOwnerAuth = async () => {
   //   if (isLogin) {
@@ -126,7 +131,7 @@ export default function Auth({
 
   return (
     <div
-      className="min-vh-100 d-flex align-items-center bg-gradient mt-5"
+      className="min-vh-100 d-flex align-items-center bg-gradient"
       style={{
         background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
       }}
@@ -138,12 +143,12 @@ export default function Auth({
               {/* Everything is inside card body */}
               <div className="card-head p-5">
                 {" "}
-                <div className="text-center mb-4">
+                <div className="text-center">
                   <i className="fas fa-plane text-primary fs-1 mb-3"></i>
-                  <h2 className="fw-bold text-dark mb-2">Discussion App</h2>
-                  <p className="text-muted">
+                  {/* <h2 className="fw-bold text-dark mb-2">Discussion App</h2> */}
+                  {/* <p className="text-muted">
                     {role === "owner" ? "Owner Portal" : "User Portal"}
-                  </p>
+                  </p> */}
                 </div>
               </div>
               {viewPage === "congratulations" && (
@@ -292,6 +297,7 @@ export default function Auth({
                           <input
                             className="form-control ms-3 bg-light"
                             value={`${tempEmail}`}
+                            onChange={(e) => e.target.value}
                           />
                         </div>
                       )}
