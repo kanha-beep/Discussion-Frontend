@@ -7,6 +7,7 @@ export const api = axios.create({
 })
 export const socket = io(import.meta.env.VITE_SOCKET_URL, {
   withCredentials: true,
+  transports: ["websocket"],
 });
 socket.on("connect", () => {
   console.log("connected", socket.id);
