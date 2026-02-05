@@ -33,9 +33,9 @@ export default function Navbar() {
       navigate(`/auth`, { replace: true });
     } catch (e) {
       console.log("error logout: ", e?.response?.data);
+      alert("error logout: ", e?.response?.data);
     } finally {
       setLogoutLoading(false);
-      alert("error logout: ", e?.response?.data);
     }
   };
   // 🔥 SCROLL EFFECT
