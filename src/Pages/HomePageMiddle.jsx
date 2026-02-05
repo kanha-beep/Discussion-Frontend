@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { api } from "../../api";
 import Draggable from "react-draggable";
 import FloatingVideo from "../Components/FloatingVideo";
@@ -6,7 +6,6 @@ export default function HomePageMiddle({
   filterDiscussion,
   navigate,
   handleDeleteDiscussion,
-  loading,
   startCall,
   localVideoRef,
   remoteVideoRef,
@@ -18,6 +17,7 @@ export default function HomePageMiddle({
   activeChatId,
   activeUser,
 }) {
+  const [loading, setLoading] = useState(false);
   console.log("show vidoe: ", showVideo);
   const dragRef = useRef(null);
   // useEffect(() => {
@@ -26,11 +26,18 @@ export default function HomePageMiddle({
   //   }
   // }, [showVideo]);
   const createRoom = async () => {
-    console.log("create room started")
-    const res = await api.post("/api/discussion/room/new", {
-      name: "Private Room",
-    });
-    navigate(`/room/${res.data._id}`);
+    setLoading(true);
+    console.log("create room started");
+    try {
+      const res = await api.post("/api/discussion/room/new", {
+        name: "Private Room",
+      });
+      navigate(`/room/${res.data._id}`);
+    } catch (e) {
+      console.log("error in creating room: ", e?.response?.data);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -143,7 +150,13 @@ export default function HomePageMiddle({
                 })}
               </span>
               <div className="card-last-right">
-                <button onClick={() => createRoom()}>Create Private Room</button>
+                <button onClick={() => createRoom()}>
+                  {loading ? (
+                    <span>Creating Room...</span>
+                  ) : (
+                    <span>Create Private Room</span>
+                  )}
+                </button>
                 <button
                   onClick={() =>
                     navigate(`/call/${d?.owner}`, {
