@@ -15,6 +15,7 @@ export default function Navbar() {
     setShowMsg,
     showMsg,
   } = useContext(UserContext);
+  const [logoutLoading, setLogoutLoading] = useState(false);
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([
     { role: "bot", text: "Hello! How can I help you today?" },
@@ -25,9 +26,16 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false); // ✅ NEW
   const navigate = useNavigate();
   const handleLogout = async () => {
-    await api.post("/api/auth/logout");
-    setIsLoggedIn(false);
-    navigate(`/auth`, { replace: true });
+    setLogoutLoading(true);
+    try {
+      await api.post("/api/auth/logout");
+      setIsLoggedIn(false);
+      navigate(`/auth`, { replace: true });
+    } catch (e) {
+      console.log("error logout: ", e?.response?.data);
+    } finally {
+      setLogoutLoading(false);
+    }
   };
   // 🔥 SCROLL EFFECT
   useEffect(() => {
@@ -196,7 +204,11 @@ export default function Navbar() {
           </button>
 
           <button className="btn text-white" onClick={handleLogout}>
-            <i className="bi bi-person-circle fs-5"></i>
+            {logoutLoading ? (
+              <span className="spinner-border spinner-border-sm me-1"></span>
+            ) : (
+              <i className="bi bi-person-circle fs-5"></i>
+            )}
           </button>
         </div>
       </div>
