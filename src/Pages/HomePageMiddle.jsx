@@ -38,6 +38,7 @@ export default function HomePageMiddle({
       console.log("error in creating room: ", e?.response?.data);
     } finally {
       setRoomLoading(false);
+      alert("room not created: ", e?.response?.data);
     }
   };
 
