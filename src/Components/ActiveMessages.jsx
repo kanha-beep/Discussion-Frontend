@@ -12,7 +12,7 @@ export default function ActiveMessages({
   // );
   return (
     <div>
-      {sideActiveUser?.email}
+      <div>{sideActiveUser?.email}</div>
       {sideActiveUser &&
         activeMessages.map((m) => (
           <>

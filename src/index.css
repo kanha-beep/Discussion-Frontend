@@ -272,12 +272,12 @@
   border-color:#283E4A ;
 }
   {/* first div - left profile */}
-.main{
+/* .main{
   display: flex;
   justify-content: center;
   justify-items: center;
   gap: 10px;
-}
+} */
 .right-side{
   width:350px;
   border: none;

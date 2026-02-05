@@ -27,14 +27,15 @@ export default function HomePageRight({
 }) {
   const [sideActiveUser, setSideActiveUser] = useState(null);
   return (
-    <div>
-      <div className=" right-side d-none d-lg-block me-3">
+    <div className="">
+      {/* <div className="right-side d-none d-lg-block lg:bg-green-100 lg:w-[15rem] md:bg-green-500 md:w-[15rem]"> */}
+      <div className="right-side w-full d-none d-lg-block bg-white sm:w-full md:w-[14rem] md:mr-[2rem] md:bg-green-500 lg:w-[12rem] lg:mr-[4rem] lg:bg-green-100">
         {/* advt */}
         <Advertisement />
         {chatOpen && (
           <div className="mt-5">
             <ul
-              className="list-group p-0 border border-dark bg-white fixed z-[9999] bottom-[3rem] w-[17.25rem] right-[3.5rem] h-[40rem]"
+              className="list-group p-0 border rounded-4 border-dark bg-[#FFFFFF] fixed z-[9999] bottom-[3rem] w-[17.25rem] right-[3.5rem] h-[40rem]"
               style={{ textAlign: "left" }}
             >
               {" "}
@@ -53,13 +54,24 @@ export default function HomePageRight({
                 </div>
               </div>
               {/* second div - search - focus - other */}
-              <div className="p-2 pb-0">
-                <input className="form-control" />
-                <div className="row border-bottom">
-                  <button className="col-6 mt-2 mb-2 bg-transparent border-0 text-center fw-bold">
+              <div className="pb-0">
+                <div className="input-group mb-2">
+                  <span className="input-group-text bg-white border-end-0">
+                    <i className="bi bi-search"></i>
+                  </span>
+                  <input
+                    className="form-control border-start-0"
+                    placeholder="Search"
+                  />
+                  <button className="btn btn-light border-start-0 border-secondary-subtle">
+                    <i className="bi bi-sliders"></i>
+                  </button>
+                </div>
+                <div className="row mx-auto align-item-center">
+                  <button className="col-6 bg-transparent border-0 border-bottom border-success text-center fw-bold">
                     Focused
                   </button>
-                  <button className="col-6 mt-2 mb-2 bg-transparent border-0 text-center fw-bold">
+                  <button className="col-6 pb-2 bg-transparent border-0 text-center fw-bold">
                     Other
                   </button>
                 </div>

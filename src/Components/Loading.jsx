@@ -7,7 +7,7 @@ export function Loading({ loading }) {
         {loading ? (
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
         ) : null}
-        <div className="text-gray-500">Loading subjects...</div>
+        <div className="text-gray-500">Loading Discussions...</div>
       </div>
     );
   }

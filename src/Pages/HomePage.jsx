@@ -44,6 +44,7 @@ export default function HomePage() {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const mediaStreamRef = useRef(null);
+  const remoteStreamRef = useRef(null);
   const pcRef = useRef(null);
   // const rtcConfig = {
   //   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -68,8 +69,20 @@ export default function HomePage() {
     // const pc = new RTCPeerConnection(rtcConfig);
     // pcRef.current = pc;
     const pc = createPeerConnection(
+      // (e) => {
+      //   // if (!remoteVideoRef.current) return;
+
+      //   if (remoteVideoRef.current.srcObject !== e.streams[0]) {
+      //     remoteVideoRef.current.srcObject = e.streams[0];
+      //   }
+      // },
       (e) => {
-        remoteVideoRef.current.srcObject = e.streams[0];
+        // remoteVideoRef.current = e.streams[0];
+        remoteStreamRef.current = e.streams[0];
+
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remoteStreamRef.current;
+        }
       },
       (candidate) => {
         socket.emit("ice-candidate", { roomId: activeChatId, candidate });
@@ -149,9 +162,11 @@ export default function HomePage() {
   //   setShowVideo(false);
   // };
   const endCall = () => {
-    pcRef.current?.getSenders().forEach((s) => s.track?.stop());
-    pcRef.current?.close();
-    pcRef.current = null;
+    if (pcRef.current) {
+      pcRef.current.getSenders().forEach((s) => s.track?.stop());
+      pcRef.current.close();
+      pcRef.current = null;
+    }
 
     localVideoRef.current?.srcObject?.getTracks().forEach((t) => t.stop());
     remoteVideoRef.current && (remoteVideoRef.current.srcObject = null);
@@ -301,7 +316,10 @@ export default function HomePage() {
     <>
       <MainPageHeading />
       {/* main div which will have 3 dives */}
-      <div className="p-0 ms-5" style={{ height: "90vh" }}>
+      <div
+        className="p-0 overflow-x-hidden"
+        style={{ height: "90vh" }}
+      >
         {isToken ? (
           <>
             <div className="row">
@@ -315,7 +333,10 @@ export default function HomePage() {
                 </div>
               )}
             </div>
-            <div className="main " style={{ height: "45vh" }}>
+            <div
+              className="d-flex justify-content-center gap-[20px]"
+              style={{ height: "45vh" }}
+            >
               {/* first div - left profile */}
               <HomePageLeft user={user} navigate={navigate} showMsg={showMsg} />
               {/* second div - all posts */}

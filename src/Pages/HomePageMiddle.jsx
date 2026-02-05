@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { api } from "../../api";
-
+import Draggable from "react-draggable";
+import FloatingVideo from "../Components/FloatingVideo";
 export default function HomePageMiddle({
   filterDiscussion,
   navigate,
@@ -18,12 +19,55 @@ export default function HomePageMiddle({
   activeUser,
 }) {
   console.log("show vidoe: ", showVideo);
+  const dragRef = useRef(null);
+  // useEffect(() => {
+  //   if (remoteVideoRef.current && remoteVideoRef.current) {
+  //     remoteVideoRef.current.srcObject = remoteVideoRef.current;
+  //   }
+  // }, [showVideo]);
+  const createRoom = async () => {
+    console.log("create room started")
+    const res = await api.post("/discussion/room/new", {
+      name: "Private Room",
+    });
+    navigate(`/room/${res.data._id}`);
+  };
 
   return (
     <div>
-      <div style={{ overflowY: "auto", width: "47rem" }} className="center">
-        {showVideo && (
-          <>
+      {/* {showVideo && (
+        <FloatingVideo
+          localVideoRef={localVideoRef}
+          remoteVideoRef={remoteVideoRef}
+          // remoteStreamRef={remoteStreamRef}
+        />
+      )} */}
+      {showVideo && (
+        <Draggable nodeRef={dragRef}>
+          <div
+            ref={dragRef}
+            style={{
+              position: "fixed",
+              top: 120,
+              left: 200,
+              zIndex: 9999,
+              cursor: "move",
+            }}
+          >
+            <video ref={localVideoRef} autoPlay muted />
+            <video ref={remoteVideoRef} autoPlay />
+          </div>
+        </Draggable>
+      )}
+
+      {/* {showVideo && (
+        <Draggable
+          handle=".controls"
+          cancel="video"
+          nodeRef={dragRef}
+          defaultPosition={{ x: 200, y: 120 }}
+        >
+          <div ref={dragRef} style={{ position: "fixed", zIndex: 100 }}>
             <video
               ref={localVideoRef}
               autoPlay
@@ -37,12 +81,20 @@ export default function HomePageMiddle({
               playsInline
               style={{ width: 300, height: 200, background: "black" }}
             />
-            <div className="controls">🎤 📷 ❌</div>
+            <div
+              className="controls"
+              onMouseDown={(e) => e.preventDefault()}
+              style={{ cursor: "move", userSelect: "none" }}
+            >
+              🎤 📷 ❌
+            </div>
 
             <div className="side-chat"></div>
-          </>
-        )}
-
+          </div>
+        </Draggable>
+      )} */}
+      <div className="center sm:w-[40rem] sm:bg-red-50 lg:w-[35rem] lg:bg-green-100 md:w-[31rem] md:bg-yellow-50 overflow-x-auto">
+        {/* <div className=" center  w-full  bg-white sm:w-full md:w-[31rem] lg:w-[35rem] lg:bg-green-100"> */}
         {filterDiscussion.map((d) => (
           <div className="card" key={d?._id}>
             {/* header */}
@@ -91,6 +143,7 @@ export default function HomePageMiddle({
                 })}
               </span>
               <div className="card-last-right">
+                <button onClick={() => createRoom()}>Create Private Room</button>
                 <button
                   onClick={() =>
                     navigate(`/call/${d?.owner}`, {

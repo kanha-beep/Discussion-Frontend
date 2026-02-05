@@ -12,6 +12,7 @@ import { UserContext } from "./Components/UserContext.js";
 import WhiteBoard from "./Pages/WhiteBoard.jsx";
 import WhiteBoard3D from "./Pages/WhiteBoard3D.jsx";
 import VideoCall from "./Pages/VideoCall.jsx";
+import PrivateRoom from "./Pages/PrivateRoom.jsx";
 function App() {
   const {
     showMsg,
@@ -55,7 +56,7 @@ function App() {
   }, []);
   console.log("chat open: ", showMsg);
   return (
-    <div style={{ width: "95%" }}>
+    <div style={{ width: "98%" }} className="mx-auto">
       <Navbar filterDiscussion={filterDiscussion} setChatOpen={setChatOpen} />
 
       <Routes>
@@ -71,6 +72,8 @@ function App() {
         />
         <Route path="/profile/:profileId" element={<ProfilePage />} />
         <Route path="/call/:activeUserId" element={<VideoCall />} />
+        <Route path="/room/:roomId" element={<PrivateRoom />} />
+
         <Route
           path="/*"
           element={

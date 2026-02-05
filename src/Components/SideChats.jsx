@@ -18,7 +18,7 @@ export default function SideChats({
       {sideActiveUser && chatOpen && sideChatOpen && (
         <>
           <div
-            className="border position-fixed bg-white rounded-2 p-2 bottom-[1rem] right-[22.75rem] w-[17.5rem]"
+            className="border position-fixed bg-[#FFFFFF] rounded-4 p-2 bottom-[1rem] right-[22.75rem] w-[17.5rem] border-dark"
             style={{ height: "30rem", overflowY: "auto" }}
           >
             <ActiveMessages

@@ -3,7 +3,8 @@ import React from "react";
 export default function HomePageLeft({ user, navigate, showMsg }) {
   return (
     <div>
-      <div className="right-side d-none d-lg-block ms-5">
+      <div className="right-side d-none d-lg-block sm:bg-green-50 bg-transparent md:bg-green-100 lg:bg-green-100 lg:ml-[3rem] lg:w-[13rem] md:w-[13rem] md:ml-[1rem] sm:w-[14rem]">
+        {/* <div    className="  right-side  hidden sm:block  w-full"      > */}
         <li className="top-color"></li>
         <ul className="list-group">
           <img
@@ -13,7 +14,7 @@ export default function HomePageLeft({ user, navigate, showMsg }) {
           />
           <li className="name"> {user?.firstName}</li>
 
-          <li className="email">{user?.email}</li>
+          <li className="email text-truncate">{user?.email}</li>
           <li className="profile">Saved Discussions</li>
           <li className="profile">Meetings</li>
           <button

@@ -13,24 +13,24 @@ export default function FriendsList({
     <div>
       {" "}
       {chatUsers.map((u) => (
-          <>
-            {" "}
-            {/* my fiends list */}
-            <div
-              key={u._id}
-              className="border p-2"
-              style={{ cursor: "pointer" }}
-              onClick={() => {
-                setActiveUser(u);
-                setSideActiveUser(u);
-                setSideChatOpen(true);
-                socket.emit("join-chat", activeChatId);
-              }}
-            >
-              {u.email.split("@")[0]}
-            </div>
-          </>
-        ))}
+        <>
+          {" "}
+          {/* my fiends list */}
+          <div
+            key={u._id}
+            className="border p-2 h-[3rem] align-item-center"
+            style={{ cursor: "pointer" }}
+            onClick={() => {
+              setActiveUser(u);
+              setSideActiveUser(u);
+              setSideChatOpen(true);
+              socket.emit("join-chat", activeChatId);
+            }}
+          >
+            <span>{u.email.split("@")[0]}</span>
+          </div>
+        </>
+      ))}
     </div>
   );
 }
