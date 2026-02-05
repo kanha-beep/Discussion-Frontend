@@ -19,7 +19,7 @@ export default function DiscussionFormEdit() {
   const getSingleDiscussion = async () => {
     try {
       console.log("discussion id: ", discussionId);
-      const res = await api.get(`/discussion/${discussionId}`);
+      const res = await api.get(`/api/discussion/${discussionId}`);
       setDisForm(res?.data?.discussion);
       console.log("single discussion: ", res?.data?.discussion);
     } catch (e) {
@@ -43,7 +43,7 @@ export default function DiscussionFormEdit() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post("/discussion/new", disForm);
+      const response = await api.post("/api/discussion/new", disForm);
       console.log("response: ", response?.data?.discussion);
       navigate("/", { state: { refresh: true } });
     } catch (error) {

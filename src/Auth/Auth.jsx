@@ -44,7 +44,7 @@ export default function Auth({ checkAuth }) {
         setBtnDisable(true);
         console.log("login starts from frontend");
         try {
-          const res = await api.post("/auth/login", { ...formData, email });
+          const res = await api.post("/api/auth/login", { ...formData, email });
           console.log("user logged in: ", res?.data);
           await checkAuth();
           return navigate("/");
@@ -64,7 +64,7 @@ export default function Auth({ checkAuth }) {
         try {
           setBtnDisable(true);
           setLoading(true);
-          const res = await api.post("/auth/register", {
+          const res = await api.post("/api/auth/register", {
             ...formData,
             email: email,
           });

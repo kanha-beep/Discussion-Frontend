@@ -15,7 +15,7 @@ export default function DiscussionFormEdit() {
   const getSingleDiscussion = async () => {
     try {
       console.log("discussion id: ", discussionId);
-      const res = await api.get(`/discussion/${discussionId}`);
+      const res = await api.get(`/api/discussion/${discussionId}`);
       setDisForm(res?.data?.discussion);
       console.log("single discussion: ", res?.data?.discussion);
     } catch (e) {
@@ -39,7 +39,7 @@ export default function DiscussionFormEdit() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.patch(`/discussion/${discussionId}/edit`, disForm);
+      const response = await api.patch(`/api/discussion/${discussionId}/edit`, disForm);
       console.log("response: ", response?.data?.discussion);
       navigate("/", { state: { refresh: true } });
     } catch (error) {

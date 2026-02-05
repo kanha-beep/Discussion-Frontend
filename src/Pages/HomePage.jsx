@@ -180,7 +180,7 @@ export default function HomePage() {
     const getAllDiscussions = async () => {
       setLoading(true);
       try {
-        const res = await api.get("/discussion");
+        const res = await api.get("/api/discussion");
         setFilterDiscussion(res?.data?.discussions || []);
         console.log("all discussions: ", res?.data?.discussions);
         setLoading(false);
@@ -200,7 +200,7 @@ export default function HomePage() {
     try {
       console.log("delete: ", i);
       setLoading(TruckElectricIcon);
-      const res = await api.delete(`/discussion/${i}`);
+      const res = await api.delete(`/api/discussion/${i}`);
       // setTimeout(() => getAllDiscussions(), 1000);
       setFilterDiscussion((prev) => prev.filter((d) => d._id !== i));
       // setAllDiscussions((prev) => prev.filter((d) => d._id !== i));
@@ -217,7 +217,7 @@ export default function HomePage() {
   useEffect(() => {
     const getAllUsers = async () => {
       try {
-        const res = await api.get("/discussion/all-users");
+        const res = await api.get("/api/discussion/all-users");
         setChatUsers(res?.data);
         console.log("all users of the platform: ", res?.data);
       } catch (e) {
@@ -231,7 +231,7 @@ export default function HomePage() {
     if (!activeUser) return;
     const fetchMessages = async () => {
       try {
-        const res = await api.post(`/discussion/chat/${activeUser._id}`);
+        const res = await api.post(`/api/discussion/chat/${activeUser._id}`);
         console.log("get message for active user: ", res?.data);
         setActiveChatId(res.data.chatId);
         socket.emit("join-chat", res.data.chatId);
@@ -247,7 +247,7 @@ export default function HomePage() {
     const getMessageHistory = async () => {
       if (!activeChatId) return;
       try {
-        const res2 = await api.get(`/discussion/chat/${activeChatId}/messages`);
+        const res2 = await api.get(`/api/discussion/chat/${activeChatId}/messages`);
         setMessagesByChat((prev) => ({
           ...prev,
           [activeChatId]: res2.data.messages,
@@ -262,7 +262,7 @@ export default function HomePage() {
   useEffect(() => {
     const getAllChats = async () => {
       try {
-        const res = await api.get("/discussion/chats");
+        const res = await api.get("/api/discussion/chats");
         console.log("all chats: ", res?.data);
       } catch (e) {
         console.log("error in getting all chats: ", e?.response?.data);
@@ -289,7 +289,7 @@ export default function HomePage() {
   const handleSubmitChat = async () => {
     if (!activeUser || !chatMsg.trim()) return;
     try {
-      const res = await api.post(`/discussion/chat/${activeChatId}/message`, {
+      const res = await api.post(`/api/discussion/chat/${activeChatId}/message`, {
         to: activeUser._id,
         message: chatMsg,
       });

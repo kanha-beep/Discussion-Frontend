@@ -38,7 +38,7 @@ function App() {
     const API_URL = import.meta.env.VITE_API_URL;
     if (API_URL) {
       try {
-        const res = await api.get("/auth/me");
+        const res = await api.get("/api/auth/me");
         setIsLoggedIn(true);
         setUser(res?.data?.user);
         console.log("got user APp: ", res?.data?.user);

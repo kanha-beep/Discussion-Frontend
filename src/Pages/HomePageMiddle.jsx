@@ -27,7 +27,7 @@ export default function HomePageMiddle({
   // }, [showVideo]);
   const createRoom = async () => {
     console.log("create room started")
-    const res = await api.post("/discussion/room/new", {
+    const res = await api.post("/api/discussion/room/new", {
       name: "Private Room",
     });
     navigate(`/room/${res.data._id}`);

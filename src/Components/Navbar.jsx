@@ -25,7 +25,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false); // ✅ NEW
   const navigate = useNavigate();
   const handleLogout = async () => {
-    await api.post("/auth/logout");
+    await api.post("/api/auth/logout");
     setIsLoggedIn(false);
     navigate(`/auth`, { replace: true });
   };
@@ -41,7 +41,7 @@ export default function Navbar() {
   useEffect(() => {
     const searchKey = async () => {
       try {
-        const res = await api.get(`/discussion?search=${search}`);
+        const res = await api.get(`/api/discussion?search=${search}`);
         setFilterDiscussion(res?.data?.discussions);
       } catch (e) {
         console.log(e?.response?.data);
