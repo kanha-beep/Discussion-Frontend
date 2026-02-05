@@ -10,6 +10,7 @@ export default function HomePageMiddle({
   localVideoRef,
   remoteVideoRef,
   showVideo,
+  loading,
   endCall,
   activeMessages,
   chatMsg,
@@ -17,7 +18,7 @@ export default function HomePageMiddle({
   activeChatId,
   activeUser,
 }) {
-  const [loading, setLoading] = useState(false);
+  const [roomLoading, setRoomLoading] = useState(false);
   console.log("show vidoe: ", showVideo);
   const dragRef = useRef(null);
   // useEffect(() => {
@@ -26,7 +27,7 @@ export default function HomePageMiddle({
   //   }
   // }, [showVideo]);
   const createRoom = async () => {
-    setLoading(true);
+    setRoomLoading(true);
     console.log("create room started");
     try {
       const res = await api.post("/api/discussion/room/new", {
@@ -36,7 +37,7 @@ export default function HomePageMiddle({
     } catch (e) {
       console.log("error in creating room: ", e?.response?.data);
     } finally {
-      setLoading(false);
+      setRoomLoading(false);
     }
   };
 
@@ -151,7 +152,7 @@ export default function HomePageMiddle({
               </span>
               <div className="card-last-right">
                 <button onClick={() => createRoom()}>
-                  {loading ? (
+                  {roomLoading ? (
                     <span>Creating Room...</span>
                   ) : (
                     <span>Create Private Room</span>
