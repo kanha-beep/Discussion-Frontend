@@ -1,16 +1,17 @@
-import { useLocation } from "react-router-dom";
-import React, { use, useContext, useEffect } from "react";
+// import { useLocation } from "react-router-dom";
+import React, { useContext, useEffect } from "react";
 import { useState } from "react";
 import { api } from "../../api.js";
 import { useNavigate, useParams } from "react-router-dom";
 import { handleChange } from "../Components/HandleChange.js";
 import { UserContext } from "../Components/UserContext.js";
-export default function DiscussionFormEdit() {
+export default function DiscussionForm() {
   const { user } = useContext(UserContext);
+  console.log("user send: ", user?.email)
   const { discussionId } = useParams();
-  const location = useLocation();
-  console.log("discussion id: ", location?.state?.user);
-  const userEmail = location?.state?.user?.email;
+  // const location = useLocation();
+  // console.log("discussion id: ", location?.state?.user);
+  const userEmail = user?.email;
   const [disForm, setDisForm] = useState({
     email: userEmail,
     keywords: [],
