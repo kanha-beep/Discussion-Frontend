@@ -35,6 +35,7 @@ export default function Navbar() {
       console.log("error logout: ", e?.response?.data);
     } finally {
       setLogoutLoading(false);
+      alert("error logout: ", e?.response?.data);
     }
   };
   // 🔥 SCROLL EFFECT
