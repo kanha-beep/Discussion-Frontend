@@ -118,7 +118,7 @@ export default function Auth({ checkAuth }) {
   const handleVerifyEmail = async () => {
     console.log("verify email: ", email);
     try {
-      const res = await api.post("/auth/check-email", { email: email });
+      const res = await api.post("/api/auth/check-email", { email: email });
       console.log("email verified: ", res?.data);
       setVerified(true);
     } catch (e) {
