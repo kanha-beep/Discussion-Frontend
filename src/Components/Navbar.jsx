@@ -33,7 +33,8 @@ export default function Navbar() {
       navigate(`/auth`, { replace: true });
     } catch (e) {
       console.log("error logout: ", e?.response?.data?.msg);
-      alert("error logout: ", e?.response?.data?.msg);
+      console.log(e.response);
+      alert("error logout: " + e?.response?.data?.msg);
     } finally {
       setLogoutLoading(false);
     }
