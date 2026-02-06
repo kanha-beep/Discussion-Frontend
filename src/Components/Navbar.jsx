@@ -215,7 +215,8 @@ export default function Navbar() {
             <ul className="dropdown-menu dropdown-menu-end">
               <li>
                 <button className="dropdown-item">
-                  <i className="bi bi-person me-2"></i> Profile
+                  <span><i className="bi bi-person me-2"></i> {user?.email}</span>
+                  
                 </button>
               </li>
 
@@ -243,13 +244,6 @@ export default function Navbar() {
               </li>
             </ul>
           </div>
-          <button className="btn text-white" onClick={handleLogout}>
-            {logoutLoading ? (
-              <span className="spinner-border spinner-border-sm me-1"></span>
-            ) : (
-              <i className="bi bi-person-circle fs-5"></i>
-            )}
-          </button>
         </div>
       </div>
     </div>
