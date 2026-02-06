@@ -204,7 +204,45 @@ export default function Navbar() {
           <button className="btn text-white">
             <i className="bi bi-bell fs-5"></i>
           </button>
+          <div className="dropdown">
+            <button
+              className="btn text-white dropdown-toggle"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <i className="bi bi-person-circle fs-5"></i>
+            </button>
+            <ul className="dropdown-menu dropdown-menu-end">
+              <li>
+                <button className="dropdown-item">
+                  <i className="bi bi-person me-2"></i> Profile
+                </button>
+              </li>
 
+              <li>
+                <hr className="dropdown-divider" />
+              </li>
+
+              <li>
+                <button
+                  className="dropdown-item text-danger"
+                  onClick={handleLogout}
+                  disabled={logoutLoading}
+                >
+                  {logoutLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      Logging out...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-box-arrow-right me-2"></i> Logout
+                    </>
+                  )}
+                </button>
+              </li>
+            </ul>
+          </div>
           <button className="btn text-white" onClick={handleLogout}>
             {logoutLoading ? (
               <span className="spinner-border spinner-border-sm me-1"></span>
