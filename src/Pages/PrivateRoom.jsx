@@ -17,6 +17,7 @@ export default function PrivateRoom() {
   const [chat, setChat] = useState([]);
   const [text, setText] = useState("");
   const [activeTab, setActiveTab] = useState("video"); // video | chat
+  const [participantCount, setParticipantCount] = useState(0);
 
   useEffect(() => {
     socket.on("room-message", (msg) => setChat((prev) => [...prev, msg]));
@@ -25,8 +26,6 @@ export default function PrivateRoom() {
 
   const sendMsg = () => {
     if (!text.trim()) return;
-    // const msg = { text };
-    // setChat((prev) => [...prev, msg]); // 👈 ADD THIS
     socket.emit("room-message", {
       roomId,
       text,
@@ -37,13 +36,6 @@ export default function PrivateRoom() {
     });
     setText("");
   };
-  //   useEffect(() => {
-  //     socket.on("room-message", (msg) => {
-  //       setChat((prev) => [...prev, msg]);
-  //     });
-
-  //     return () => socket.off("room-message");
-  //   }, []);
 
   useEffect(() => {
     if (!roomId || !socket) return;
@@ -55,10 +47,21 @@ export default function PrivateRoom() {
 
       localStreamRef.current = stream;
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-      socket.emit("join-room", { roomId });
+      // socket.emit("join-room", { roomId });
+      socket.emit("join-room-request", { roomId });
     };
     init();
-
+    socket.on("admitted", () => {
+      socket.emit("join-room", { roomId });
+    });
+    socket.on("rejected", () => {
+      alert("Host rejected");
+      navigate("/");
+    });
+    socket.on("kicked", () => {
+      alert("You were kicked");
+      navigate("/");
+    });
     socket.on("user-joined", ({ socketId }) => {
       createPeer(socketId);
     });
@@ -87,6 +90,15 @@ export default function PrivateRoom() {
     });
 
     return () => {
+      socket.off("admitted");
+      socket.off("rejected");
+      socket.off("kicked");
+      socket.off("user-joined");
+      socket.off("room-offer");
+      socket.off("room-answer");
+      socket.off("room-ice");
+      socket.off("user-left");
+
       socket.emit("leave-room", { roomId });
       Object.values(peersRef.current).forEach((pc) => pc.close());
     };
