@@ -230,7 +230,7 @@ export default function PrivateRoom() {
             )}
 
             {participants.map((s, i) => (
-              <div key={s?.socketid}>
+              <div key={s?.socketId}>
                 <video key={i} autoPlay ref={(v) => v && (v.srcObject = s?.stream)} />
                 {isHost && (
                   <button
