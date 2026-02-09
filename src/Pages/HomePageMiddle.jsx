@@ -25,50 +25,6 @@ export default function HomePageMiddle({
   console.log("show vidoe: ", showVideo);
   const dragRef = useRef(null);
   const [roomCounts, setRoomCounts] = useState({});
-  // useEffect(() => {
-  //   if (!socket) return;
-  //   const handleRoomCount = (count, roomId) => {
-  //     console.log("received:", roomId, count);
-
-  //     setRoomCounts((prev) => ({
-  //       ...prev,
-  //       [roomId]: count,
-  //     }));
-  //   };
-  //   socket.on("room-users-count", handleRoomCount);
-
-  //   return () => socket.off("room-users-count", handleRoomCount);
-  // }, [socket, filterDiscussion]);
-  // useEffect(() => {
-  //   if (!socket) return;
-  //   if (!filterDiscussion || filterDiscussion.length === 0) return;
-  //   console.log("joining room:", roomId);
-  //   filterDiscussion.forEach((d) => {
-  //     if (!d.roomId?._id) {
-  //       console.log("Skipping discussion without room:", d._id);
-  //       return;
-  //     }
-  //     socket.emit("join-room", { roomId: String(d.roomId._id) });
-  //   });
-  //   // socket.on("room-users-count", (count) => {
-  //   //   setRoomCounts((prev) => ({
-  //   //     ...prev,
-  //   //     [roomId]: count,
-  //   //   }));
-  //   // });
-  // }, [socket, filterDiscussion]);
-  // useEffect(() => {
-  //   if (!socket) return;
-  //   if (!filterDiscussion || filterDiscussion.length === 0) return;
-  //   console.log("joining rooms:", filterDiscussion);
-  //   const rooms = filterDiscussion
-  //     ?.filter((d) => d.roomId?._id)
-  //     ?.map((d) => d.roomId._id);
-  //   rooms?.forEach((roomId) => {
-  //     socket.emit("join-room", { roomId: String(roomId) });
-  //   });
-  //   console.log("room joined: ", rooms);
-  // }, [socket, filterDiscussion]);
 
   const createRoom = async (roomId, existingRoomId) => {
     setRoomLoading(true);
@@ -116,7 +72,8 @@ export default function HomePageMiddle({
       const id = d.roomId?._id;
       if (id && !joined.has(id)) {
         joined.add(id);
-        socket.emit("join-room", { roomId: String(id) });
+        // socket.emit("join-room", { roomId: String(id) });
+        socket.emit("watch-room", { roomId: String(id) });
       }
     });
 
