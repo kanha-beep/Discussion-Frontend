@@ -97,6 +97,33 @@ export default function HomePageMiddle({
     }
   };
   console.log("roomCounts state:", roomCounts);
+  useEffect(() => {
+    if (!socket || !filterDiscussion?.length) return;
+
+    // listen for count updates
+    const handleRoomCount = (count, roomId) => {
+      setRoomCounts((prev) => ({
+        ...prev,
+        [roomId]: count,
+      }));
+    };
+
+    socket.on("room-users-count", handleRoomCount);
+
+    // join each room once
+    const joined = new Set();
+    filterDiscussion.forEach((d) => {
+      const id = d.roomId?._id;
+      if (id && !joined.has(id)) {
+        joined.add(id);
+        socket.emit("join-room", { roomId: String(id) });
+      }
+    });
+
+    return () => {
+      socket.off("room-users-count", handleRoomCount);
+    };
+  }, [socket, filterDiscussion]);
 
   return (
     <div>
@@ -168,13 +195,6 @@ export default function HomePageMiddle({
                 })}
               </span>
               <div className="card-last-right">
-                {/* <button onClick={() => createRoom(d._id)}>
-                  {roomLoading ? (
-                    <span>Creating Room...</span>
-                  ) : (
-                    <span>Create Private Room</span>
-                  )}
-                </button> */}
                 <button onClick={() => createRoom(d._id, d.roomId?._id)}>
                   {d.roomId?._id ? "Join Room" : "Create Room"}
                 </button>
@@ -184,15 +204,6 @@ export default function HomePageMiddle({
                 >
                   participants {roomCounts[String(d.roomId?._id)] ?? 0}
                 </span>
-                {/* {filterDiscussion.map((d) => {
-                  const count = roomCounts[String(d._id)] ?? 0;
-
-                  return (
-                    <div key={d._id}>
-                      <span>participants {count}</span>
-                    </div>
-                  );
-                })} */}
 
                 <button
                   onClick={() =>
@@ -221,11 +232,8 @@ export default function HomePageMiddle({
                   ) : (
                     <i className="bi bi-trash"></i>
                   )}
-                  {/* <div className="alert alert-danger alert-heading">Please login</div> */}
                 </button>
-                {/* <button onClick={() => startCall(d.user)}>
-                  <i className="bi bi-camera-video-fill"></i>
-                </button> */}
+
                 <button onClick={endCall} className="btn btn-danger">
                   <i className="bi bi-telephone-x-fill"></i>
                 </button>
