@@ -82,13 +82,7 @@ export default function Navbar() {
           >
             DISCUSSION HUB
           </button>
-          <button
-            className="navbar-brand fw-bold text-white bg-dark"
-            onClick={() => navigate("/whiteboard")}
-            style={{ border: 0 }}
-          >
-            White Board
-          </button>
+          
           {/* MOBILE ACTIONS (search + chats) */}
           <div className="d-flex d-lg-none ms-auto gap-2">
             {/* Search */}

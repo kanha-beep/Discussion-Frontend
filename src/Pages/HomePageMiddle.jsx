@@ -17,40 +17,89 @@ export default function HomePageMiddle({
   setChatMsg,
   activeChatId,
   activeUser,
+  socket,
+  setFilterDiscussion,
 }) {
+  const roomId = activeChatId;
   const [roomLoading, setRoomLoading] = useState(false);
   console.log("show vidoe: ", showVideo);
   const dragRef = useRef(null);
+  const [roomCounts, setRoomCounts] = useState({});
+  useEffect(() => {
+    if (!socket) return;
+    const handleRoomCount = (count, roomId) => {
+      console.log("received:", roomId, count);
+
+      setRoomCounts((prev) => ({
+        ...prev,
+        [roomId]: count,
+      }));
+    };
+    socket.on("room-users-count", handleRoomCount);
+
+    return () => socket.off("room-users-count", handleRoomCount);
+  }, [socket, filterDiscussion]);
   // useEffect(() => {
-  //   if (remoteVideoRef.current && remoteVideoRef.current) {
-  //     remoteVideoRef.current.srcObject = remoteVideoRef.current;
-  //   }
-  // }, [showVideo]);
-  const createRoom = async () => {
+  //   if (!socket) return;
+  //   if (!filterDiscussion || filterDiscussion.length === 0) return;
+  //   console.log("joining room:", roomId);
+  //   filterDiscussion.forEach((d) => {
+  //     if (!d.roomId?._id) {
+  //       console.log("Skipping discussion without room:", d._id);
+  //       return;
+  //     }
+  //     socket.emit("join-room", { roomId: String(d.roomId._id) });
+  //   });
+  //   // socket.on("room-users-count", (count) => {
+  //   //   setRoomCounts((prev) => ({
+  //   //     ...prev,
+  //   //     [roomId]: count,
+  //   //   }));
+  //   // });
+  // }, [socket, filterDiscussion]);
+  // useEffect(() => {
+  //   if (!socket) return;
+  //   if (!filterDiscussion || filterDiscussion.length === 0) return;
+  //   console.log("joining rooms:", filterDiscussion);
+  //   const rooms = filterDiscussion
+  //     ?.filter((d) => d.roomId?._id)
+  //     ?.map((d) => d.roomId._id);
+  //   rooms?.forEach((roomId) => {
+  //     socket.emit("join-room", { roomId: String(roomId) });
+  //   });
+  //   console.log("room joined: ", rooms);
+  // }, [socket, filterDiscussion]);
+
+  const createRoom = async (roomId, existingRoomId) => {
     setRoomLoading(true);
-    console.log("create room started");
+    console.log("1. create room started: ", roomId, existingRoomId);
+    if (existingRoomId) {
+      navigate(`/room/${existingRoomId}`);
+      return;
+    }
     try {
-      const res = await api.post("/api/discussion/room/new", {
+      const res = await api.post(`/api/discussion/room/new`, {
         name: "Private Room",
+        discussionId: roomId,
       });
-      navigate(`/room/${res.data._id}`);
+      const newRoomId = res?.data?._id;
+      const newRoom = res?.data;
+      console.log("got room id: ", newRoomId);
+      setFilterDiscussion((prev) =>
+        prev.map((d) => (d._id === roomId ? { ...d, roomId: newRoom } : d)),
+      );
+      navigate(`/room/${newRoomId}`);
     } catch (e) {
       console.log("error in creating room: ", e?.response?.data);
+      alert("room not created: ", e?.response?.data);
     } finally {
       setRoomLoading(false);
-      alert("room not created: ", e?.response?.data);
     }
   };
+  console.log("roomCounts state:", roomCounts);
 
   return (
     <div>
-      {/* {showVideo && (
-        <FloatingVideo
-          localVideoRef={localVideoRef}
-          remoteVideoRef={remoteVideoRef}
-          // remoteStreamRef={remoteStreamRef}
-        />
-      )} */}
       {showVideo && (
         <Draggable nodeRef={dragRef}>
           <div
@@ -69,39 +118,6 @@ export default function HomePageMiddle({
         </Draggable>
       )}
 
-      {/* {showVideo && (
-        <Draggable
-          handle=".controls"
-          cancel="video"
-          nodeRef={dragRef}
-          defaultPosition={{ x: 200, y: 120 }}
-        >
-          <div ref={dragRef} style={{ position: "fixed", zIndex: 100 }}>
-            <video
-              ref={localVideoRef}
-              autoPlay
-              muted
-              playsInline
-              style={{ width: 300, height: 200, background: "black" }}
-            />
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              style={{ width: 300, height: 200, background: "black" }}
-            />
-            <div
-              className="controls"
-              onMouseDown={(e) => e.preventDefault()}
-              style={{ cursor: "move", userSelect: "none" }}
-            >
-              🎤 📷 ❌
-            </div>
-
-            <div className="side-chat"></div>
-          </div>
-        </Draggable>
-      )} */}
       <div className="center sm:w-[40rem] sm:bg-red-50 lg:w-[35rem] lg:bg-green-100 md:w-[31rem] md:bg-yellow-50 overflow-x-auto">
         {/* <div className=" center  w-full  bg-white sm:w-full md:w-[31rem] lg:w-[35rem] lg:bg-green-100"> */}
         {filterDiscussion.map((d) => (
@@ -115,7 +131,7 @@ export default function HomePageMiddle({
               />
               <div className="center-card-name">
                 <span className="center-card-name"> {d?.email}</span>
-                <span className="center-card-proffession">Codder </span>
+                <span className="center-card-proffession">{d?._id} </span>
               </div>
               <span className="center-card-1" style={{}}>
                 {d?.status || "Open"}
@@ -152,13 +168,32 @@ export default function HomePageMiddle({
                 })}
               </span>
               <div className="card-last-right">
-                <button onClick={() => createRoom()}>
+                {/* <button onClick={() => createRoom(d._id)}>
                   {roomLoading ? (
                     <span>Creating Room...</span>
                   ) : (
                     <span>Create Private Room</span>
                   )}
+                </button> */}
+                <button onClick={() => createRoom(d._id, d.roomId?._id)}>
+                  {d.roomId?._id ? "Join Room" : "Create Room"}
                 </button>
+                <span
+                  className="bg-success text-truncate d-flex align-items-center badge"
+                  style={{ width: "50%", height: "50%" }}
+                >
+                  participants {roomCounts[String(d.roomId?._id)] ?? 0}
+                </span>
+                {/* {filterDiscussion.map((d) => {
+                  const count = roomCounts[String(d._id)] ?? 0;
+
+                  return (
+                    <div key={d._id}>
+                      <span>participants {count}</span>
+                    </div>
+                  );
+                })} */}
+
                 <button
                   onClick={() =>
                     navigate(`/call/${d?.owner}`, {
@@ -169,7 +204,7 @@ export default function HomePageMiddle({
                     })
                   }
                 >
-                  Video
+                  <i className="bi bi-camera-video-fill"></i>
                 </button>
                 <button
                   onClick={() => navigate(`/discussion-form-edit/${d?._id}`)}
@@ -188,9 +223,9 @@ export default function HomePageMiddle({
                   )}
                   {/* <div className="alert alert-danger alert-heading">Please login</div> */}
                 </button>
-                <button onClick={() => startCall(d.user)}>
+                {/* <button onClick={() => startCall(d.user)}>
                   <i className="bi bi-camera-video-fill"></i>
-                </button>
+                </button> */}
                 <button onClick={endCall} className="btn btn-danger">
                   <i className="bi bi-telephone-x-fill"></i>
                 </button>

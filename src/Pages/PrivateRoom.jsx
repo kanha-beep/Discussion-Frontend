@@ -4,6 +4,7 @@ import { socket } from "../../api";
 import { createPeerConnection } from "../Components/Pc";
 import { useContext } from "react";
 import { UserContext } from "../Components/UserContext.js";
+import WhiteBoard from "../Pages/WhiteBoard.jsx";
 export default function PrivateRoom() {
   const navigate = useNavigate();
   const { roomId } = useParams();
@@ -45,6 +46,7 @@ export default function PrivateRoom() {
   //   }, []);
 
   useEffect(() => {
+    if (!roomId || !socket) return;
     const init = async () => {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
@@ -52,11 +54,9 @@ export default function PrivateRoom() {
       });
 
       localStreamRef.current = stream;
-      localVideoRef.current.srcObject = stream;
-
+      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
       socket.emit("join-room", { roomId });
     };
-
     init();
 
     socket.on("user-joined", ({ socketId }) => {
@@ -116,7 +116,7 @@ export default function PrivateRoom() {
 
   const attachRemoteStream = (stream) => {
     setParticipants((prev) =>
-      prev.find((s) => s.id === stream.id) ? prev : [...prev, stream],
+      prev.some((s) => s.id === stream.id) ? prev : [...prev, stream],
     );
   };
   const toggleAudio = () => {
@@ -177,6 +177,13 @@ export default function PrivateRoom() {
         <div className="room-tabs">
           <button onClick={() => setActiveTab("video")}>Video</button>
           <button onClick={() => setActiveTab("chat")}>Chat</button>
+          <button
+            className="navbar-brand fw-bold text-white bg-dark"
+            onClick={() => setActiveTab("board")}
+            style={{ border: 0 }}
+          >
+            White Board
+          </button>
         </div>
 
         <div
@@ -228,28 +235,8 @@ export default function PrivateRoom() {
               </div>
             )}
           </div>
+          {activeTab === "board" && <WhiteBoard roomId={roomId} />}
         </div>
-        {/* 
-        {activeTab === "chat" && (
-          <div className="room-chat">
-            <div className="chat-messages">
-              {chat.map((m, i) => (
-                <div key={i}>
-                  <b>{m.sender?.name || "User"}:</b> {m.text}
-                </div>
-              ))}
-            </div>
-
-            <div className="chat-input">
-              <input
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Message room…"
-              />
-              <button onClick={sendMsg}>Send</button>
-            </div>
-          </div>
-        )} */}
       </div>
     </div>
   );

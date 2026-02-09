@@ -219,7 +219,7 @@ export default function HomePage() {
       try {
         const res = await api.get("/api/discussion/all-users");
         setChatUsers(res?.data);
-        console.log("all users of the platform: ", res?.data);
+        // console.log("all users of the platform: ", res?.data);
       } catch (e) {
         console.log("error in getting all users: ", e?.response?.data);
       }
@@ -232,7 +232,7 @@ export default function HomePage() {
     const fetchMessages = async () => {
       try {
         const res = await api.post(`/api/discussion/chat/${activeUser._id}`);
-        console.log("get message for active user: ", res?.data);
+        // console.log("get message for active user: ", res?.data);
         setActiveChatId(res.data.chatId);
         socket.emit("join-chat", res.data.chatId);
       } catch (e) {
@@ -247,7 +247,9 @@ export default function HomePage() {
     const getMessageHistory = async () => {
       if (!activeChatId) return;
       try {
-        const res2 = await api.get(`/api/discussion/chat/${activeChatId}/messages`);
+        const res2 = await api.get(
+          `/api/discussion/chat/${activeChatId}/messages`,
+        );
         setMessagesByChat((prev) => ({
           ...prev,
           [activeChatId]: res2.data.messages,
@@ -263,7 +265,7 @@ export default function HomePage() {
     const getAllChats = async () => {
       try {
         const res = await api.get("/api/discussion/chats");
-        console.log("all chats: ", res?.data);
+        // console.log("all chats: ", res?.data);
       } catch (e) {
         console.log("error in getting all chats: ", e?.response?.data);
       }
@@ -284,16 +286,19 @@ export default function HomePage() {
     return () => socket.off("new-message", handleNewMessage);
   }, []);
   useEffect(() => {
-    console.log("messages by chat updated: ", messagesByChat);
+    // console.log("messages by chat updated: ", messagesByChat);
   }, []);
   const handleSubmitChat = async () => {
     if (!activeUser || !chatMsg.trim()) return;
     try {
-      const res = await api.post(`/api/discussion/chat/${activeChatId}/message`, {
-        to: activeUser._id,
-        message: chatMsg,
-      });
-      console.log("chat message sent: ", res?.data);
+      const res = await api.post(
+        `/api/discussion/chat/${activeChatId}/message`,
+        {
+          to: activeUser._id,
+          message: chatMsg,
+        },
+      );
+      // console.log("chat message sent: ", res?.data);
       setChatMsg("");
     } catch (e) {
       console.log("error in sending chat message: ", e?.response?.data);
@@ -316,10 +321,7 @@ export default function HomePage() {
     <>
       <MainPageHeading />
       {/* main div which will have 3 dives */}
-      <div
-        className="p-0 overflow-x-hidden"
-        style={{ height: "90vh" }}
-      >
+      <div className="p-0 overflow-x-hidden" style={{ height: "90vh" }}>
         {isToken ? (
           <>
             <div className="row">
@@ -341,15 +343,18 @@ export default function HomePage() {
               <HomePageLeft user={user} navigate={navigate} showMsg={showMsg} />
               {/* second div - all posts */}
               <HomePageMiddle
+                socket={socket}
                 navigate={navigate}
                 loading={loading}
                 handleDeleteDiscussion={handleDeleteDiscussion}
                 filterDiscussion={filterDiscussion}
+                setFilterDiscussion={setFilterDiscussion}
                 startCall={startCall}
                 localVideoRef={localVideoRef}
                 remoteVideoRef={remoteVideoRef}
                 showVideo={showVideo}
                 endCall={endCall}
+                // roomId={roomId}
                 activeMessages={activeMessages}
                 chatMsg={chatMsg}
                 setChatMsg={setChatMsg}

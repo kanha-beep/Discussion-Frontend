@@ -45,7 +45,7 @@ export default function Auth({ checkAuth }) {
         console.log("login starts from frontend");
         try {
           const res = await api.post("/api/auth/login", { ...formData, email });
-          console.log("user logged in: ", res?.data);
+          // console.log("user logged in: ", res?.data);
           await checkAuth();
           return navigate("/");
         } catch (e) {

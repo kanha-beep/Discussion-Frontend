@@ -41,7 +41,7 @@ function App() {
         const res = await api.get("/api/auth/me");
         setIsLoggedIn(true);
         setUser(res?.data?.user);
-        console.log("got user APp: ", res?.data?.user);
+        console.log("Logged in User: ", res?.data?.user?._id);
       } catch (e) {
         console.log("error in checkAuth: ", e?.response?.data?.message);
         setIsLoggedIn(false);
@@ -54,7 +54,7 @@ function App() {
   useEffect(() => {
     checkAuth();
   }, []);
-  console.log("chat open: ", showMsg);
+  // console.log("chat open: ", showMsg);
   return (
     <div style={{ width: "98%" }} className="mx-auto">
       <Navbar filterDiscussion={filterDiscussion} setChatOpen={setChatOpen} />
