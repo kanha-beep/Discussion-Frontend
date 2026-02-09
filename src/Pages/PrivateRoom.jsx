@@ -18,6 +18,8 @@ export default function PrivateRoom() {
   const [text, setText] = useState("");
   const [activeTab, setActiveTab] = useState("video"); // video | chat
   const [participantCount, setParticipantCount] = useState(0);
+  const [waitingUsers, setWaitingUsers] = useState([]);
+  const [isHost, setIsHost] = useState(false);
 
   useEffect(() => {
     socket.on("room-message", (msg) => setChat((prev) => [...prev, msg]));
@@ -51,6 +53,15 @@ export default function PrivateRoom() {
       socket.emit("join-room-request", { roomId });
     };
     init();
+    // server tells host he is host
+    socket.on("host", () => {
+      setIsHost(true);
+    });
+
+    // server sends waiting list
+    socket.on("waiting-users", (users) => {
+      setWaitingUsers(users);
+    });
     socket.on("admitted", () => {
       socket.emit("join-room", { roomId });
     });
@@ -98,7 +109,8 @@ export default function PrivateRoom() {
       socket.off("room-answer");
       socket.off("room-ice");
       socket.off("user-left");
-
+      socket.off("host");
+      socket.off("waiting-users");
       socket.emit("leave-room", { roomId });
       Object.values(peersRef.current).forEach((pc) => pc.close());
     };
@@ -210,7 +222,21 @@ export default function PrivateRoom() {
             )}
 
             {participants.map((s, i) => (
-              <video key={i} autoPlay ref={(v) => v && (v.srcObject = s)} />
+              <>
+                <video key={i} autoPlay ref={(v) => v && (v.srcObject = s)} />
+                {isHost && (
+                  <button
+                    onClick={() =>
+                      socket.emit("kick-user", {
+                        roomId,
+                        socketId: peersRef.current[s.id],
+                      })
+                    }
+                  >
+                    Kick
+                  </button>
+                )}
+              </>
             ))}
 
             <button onClick={toggleAudio}>Mute</button>
@@ -223,6 +249,41 @@ export default function PrivateRoom() {
             </button>
           </div>
           <div>
+            {isHost && waitingUsers.length > 0 && (
+              <div
+                style={{ background: "#222", color: "white", padding: "10px" }}
+              >
+                <h3>Waiting Users</h3>
+
+                {waitingUsers.map((u) => (
+                  <div key={u.socketId} style={{ marginBottom: "5px" }}>
+                    {u.name}
+
+                    <button
+                      onClick={() =>
+                        socket.emit("admit-user", {
+                          roomId,
+                          socketId: u.socketId,
+                        })
+                      }
+                    >
+                      Admit
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        socket.emit("reject-user", {
+                          roomId,
+                          socketId: u.socketId,
+                        })
+                      }
+                    >
+                      Reject
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             {activeTab === "chat" && (
               <div className="room-chat">
                 <div className="chat-messages">
