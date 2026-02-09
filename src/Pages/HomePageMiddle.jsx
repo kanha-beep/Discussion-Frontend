@@ -25,20 +25,20 @@ export default function HomePageMiddle({
   console.log("show vidoe: ", showVideo);
   const dragRef = useRef(null);
   const [roomCounts, setRoomCounts] = useState({});
-  useEffect(() => {
-    if (!socket) return;
-    const handleRoomCount = (count, roomId) => {
-      console.log("received:", roomId, count);
+  // useEffect(() => {
+  //   if (!socket) return;
+  //   const handleRoomCount = (count, roomId) => {
+  //     console.log("received:", roomId, count);
 
-      setRoomCounts((prev) => ({
-        ...prev,
-        [roomId]: count,
-      }));
-    };
-    socket.on("room-users-count", handleRoomCount);
+  //     setRoomCounts((prev) => ({
+  //       ...prev,
+  //       [roomId]: count,
+  //     }));
+  //   };
+  //   socket.on("room-users-count", handleRoomCount);
 
-    return () => socket.off("room-users-count", handleRoomCount);
-  }, [socket, filterDiscussion]);
+  //   return () => socket.off("room-users-count", handleRoomCount);
+  // }, [socket, filterDiscussion]);
   // useEffect(() => {
   //   if (!socket) return;
   //   if (!filterDiscussion || filterDiscussion.length === 0) return;
