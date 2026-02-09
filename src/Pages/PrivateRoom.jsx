@@ -230,7 +230,7 @@ export default function PrivateRoom() {
             )}
 
             {participants.map((s, i) => (
-              <>
+              <div key={s?.socketid}>
                 <video key={i} autoPlay ref={(v) => v && (v.srcObject = s?.stream)} />
                 {isHost && (
                   <button
@@ -251,7 +251,7 @@ export default function PrivateRoom() {
                     Kick
                   </button>
                 )}
-              </>
+              </div>
             ))}
 
             <button onClick={toggleAudio}>Mute</button>
