@@ -118,7 +118,7 @@ export default function PrivateRoom() {
 
   const createPeer = (remoteId, isAnswerer = false) => {
     const pc = createPeerConnection(
-      (e) => attachRemoteStream(e.streams[0, remoteId]),
+      (e) => attachRemoteStream(e.streams[0], remoteId),
       (candidate) => socket.emit("room-ice", { to: remoteId, candidate }),
     );
 
