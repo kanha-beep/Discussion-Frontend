@@ -118,7 +118,7 @@ export default function PrivateRoom() {
 
   const createPeer = (remoteId, isAnswerer = false) => {
     const pc = createPeerConnection(
-      (e) => attachRemoteStream(e.streams[0]),
+      (e) => attachRemoteStream(e.streams[0, remoteId]),
       (candidate) => socket.emit("room-ice", { to: remoteId, candidate }),
     );
 
@@ -138,11 +138,19 @@ export default function PrivateRoom() {
     return pc;
   };
 
-  const attachRemoteStream = (stream) => {
+  // const attachRemoteStream = (stream) => {
+  //   setParticipants((prev) =>
+  //     prev.some((s) => s.id === stream.id) ? prev : [...prev, stream],
+  //   );
+  // };
+  const attachRemoteStream = (stream, socketId) => {
     setParticipants((prev) =>
-      prev.some((s) => s.id === stream.id) ? prev : [...prev, stream],
+      prev.some((p) => p.socketId === socketId)
+        ? prev
+        : [...prev, { stream, socketId }],
     );
   };
+
   const toggleAudio = () => {
     localStreamRef.current
       .getAudioTracks()
@@ -229,7 +237,14 @@ export default function PrivateRoom() {
                     onClick={() =>
                       socket.emit("kick-user", {
                         roomId,
-                        socketId: peersRef.current[s.id],
+                        socketId: s.socketId
+                        // socketId: Object.keys(peersRef.current).find(
+                        //   (id) =>
+                        //     peersRef.current[id]?.getReceivers()?.[0]?.track
+                        //       ?.id === s.id,
+                        // ),
+
+                        // socketId: peersRef.current[s.id],
                       })
                     }
                   >
