@@ -107,8 +107,8 @@ export default function HomePageMiddle({
       <div className="center sm:w-[40rem] sm:bg-red-50 lg:w-[35rem] lg:bg-green-100 md:w-[31rem] md:bg-yellow-50 overflow-x-auto">
         {/* <div className=" center  w-full  bg-white sm:w-full md:w-[31rem] lg:w-[35rem] lg:bg-green-100"> */}
         {filterDiscussion.map((d) => {
-          const isOwner = d.owner === activeUser?._id;
-          const isAdmin = activeUser?.roles === "admin";
+          const isOwner = d.owner === user?._id;
+          const isAdmin = user?.roles === "admin";
           return (
             <div className="card" key={d?._id}>
               {/* header */}
