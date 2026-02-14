@@ -1,6 +1,15 @@
 import React from "react";
-
+import { useEffect } from "react";
+import { api } from "../../api";
+import { XMLParser } from "fast-xml-parser";
 export default function Advertisement() {
+  useEffect(() => {
+    const getNews = async () => {
+      const res = await api.get("https://pib.gov.in/rss.aspx");
+      console.log("new: ", res?.data);
+    };
+    getNews()
+  }, []);
   return (
     <div>
       {" "}
