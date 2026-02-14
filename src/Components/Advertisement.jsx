@@ -5,10 +5,14 @@ import { XMLParser } from "fast-xml-parser";
 export default function Advertisement() {
   useEffect(() => {
     const getNews = async () => {
-      const res = await api.get("/api/discussion/news");
-      console.log("new: ", res?.data);
+      try {
+        const res = await api.get("/api/discussion/news");
+        console.log("NEWS: ", res?.data);
+      } catch (err) {
+        console.log("error fetching news: ", err.response?.data || err.message);
+      }
     };
-    getNews()
+    getNews();
   }, []);
   return (
     <div>
