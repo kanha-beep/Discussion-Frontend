@@ -5,7 +5,7 @@ import { XMLParser } from "fast-xml-parser";
 export default function Advertisement() {
   useEffect(() => {
     const getNews = async () => {
-      const res = await api.get("https://pib.gov.in/rss.aspx");
+      const res = await api.get("/api/discussion/news");
       console.log("new: ", res?.data);
     };
     getNews()
