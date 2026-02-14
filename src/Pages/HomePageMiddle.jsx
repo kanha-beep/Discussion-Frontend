@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { api } from "../../api";
 import Draggable from "react-draggable";
 import FloatingVideo from "../Components/FloatingVideo";
+import { UserContext } from "../Components/UserContext";
 export default function HomePageMiddle({
   filterDiscussion,
   navigate,
@@ -20,6 +21,7 @@ export default function HomePageMiddle({
   socket,
   setFilterDiscussion,
 }) {
+  const { user } = useContext(UserContext);
   const roomId = activeChatId;
   const [roomLoading, setRoomLoading] = useState(false);
   console.log("show vidoe: ", showVideo);
@@ -104,100 +106,110 @@ export default function HomePageMiddle({
 
       <div className="center sm:w-[40rem] sm:bg-red-50 lg:w-[35rem] lg:bg-green-100 md:w-[31rem] md:bg-yellow-50 overflow-x-auto">
         {/* <div className=" center  w-full  bg-white sm:w-full md:w-[31rem] lg:w-[35rem] lg:bg-green-100"> */}
-        {filterDiscussion.map((d) => (
-          <div className="card" key={d?._id}>
-            {/* header */}
-            <div className="center-card">
-              <img
-                src="data:image/jpeg;base64,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"
-                alt="demo"
-                className="card-profile"
-              />
-              <div className="center-card-name">
-                <span className="center-card-name"> {d?.email}</span>
-                <span className="center-card-proffession">{d?._id} </span>
+        {filterDiscussion.map((d) => {
+          const isOwner = d.owner === activeUser?._id;
+          const isAdmin = activeUser?.roles === "admin";
+          return (
+            <div className="card" key={d?._id}>
+              {/* header */}
+              <div className="center-card">
+                <img
+                  src="data:image/jpeg;base64,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"
+                  alt="demo"
+                  className="card-profile"
+                />
+                <div className="center-card-name">
+                  <span className="center-card-name"> {d?.email}</span>
+                  <span className="center-card-proffession">{d?._id} </span>
+                </div>
+                <span className="center-card-1" style={{}}>
+                  {d?.status || "Open"}
+                </span>
               </div>
-              <span className="center-card-1" style={{}}>
-                {d?.status || "Open"}
-              </span>
-            </div>
 
-            {/* body */}
-            <div className="box">
-              <div className="">
-                <span className="keyword"></span>
-                {/* <span className="box-title">
+              {/* body */}
+              <div className="box">
+                <div className="">
+                  <span className="keyword"></span>
+                  {/* <span className="box-title">
                   How AI is Changing Web Development in 2026
                 </span> */}
-                <br></br>
-                <p className="card-text">{d?.remarks}</p>
-                <span className="card-keyword">
-                  {" "}
-                  <b className="keyword-1">Keywords :</b>
-                  {/* {d?.keywords.map((k) => k + " , ")}{" "} */}
-                  {d.keywords.join(", ")}
-                </span>
+                  <br></br>
+                  <p className="card-text">{d?.remarks}</p>
+                  <span className="card-keyword">
+                    {" "}
+                    <b className="keyword-1">Keywords :</b>
+                    {/* {d?.keywords.map((k) => k + " , ")}{" "} */}
+                    {d.keywords.join(", ")}
+                  </span>
+                </div>
               </div>
-            </div>
-            {/* footer */}
-            <div className="card-last">
-              <span className="card-last-left">
-                {new Date(d?.createdAt).toLocaleDateString("en-IN", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: true,
-                })}
-              </span>
-              <div className="card-last-right">
-                <button onClick={() => createRoom(d._id, d.roomId?._id)}>
-                  {d.roomId?._id ? "Join Room" : "Create Room"}
-                </button>
-                <span
-                  className="bg-success text-truncate d-flex align-items-center badge"
-                  style={{ width: "50%", height: "50%" }}
-                >
-                  participants {roomCounts[String(d.roomId?._id)] ?? 0}
+              {/* footer */}
+              <div className="card-last">
+                <span className="card-last-left">
+                  {new Date(d?.createdAt).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  })}
                 </span>
+                <div className="card-last-right">
+                  <button onClick={() => createRoom(d._id, d.roomId?._id)}>
+                    {d.roomId?._id ? "Join Room" : "Create Room"}
+                  </button>
+                  <span
+                    className="bg-success text-truncate d-flex align-items-center badge"
+                    style={{ width: "50%", height: "50%" }}
+                  >
+                    participants {roomCounts[String(d.roomId?._id)] ?? 0}
+                  </span>
 
-                <button
-                  onClick={() =>
-                    navigate(`/call/${d?.owner}`, {
-                      state: {
-                        message: "Regarding your card: 1pm discussion",
-                        cardId: d._id,
-                      },
-                    })
-                  }
-                >
-                  <i className="bi bi-camera-video-fill"></i>
-                </button>
-                <button
-                  onClick={() => navigate(`/discussion-form-edit/${d?._id}`)}
-                  className="card-last-right1"
-                >
-                  <i className="bi bi-pencil"></i>
-                </button>
-                <button
-                  onClick={() => handleDeleteDiscussion(d?._id)}
-                  className="btn btn-danger"
-                >
-                  {loading ? (
-                    <span className="spinner-border spinner-border-sm me-2" />
-                  ) : (
-                    <i className="bi bi-trash"></i>
+                  <button
+                    onClick={() =>
+                      navigate(`/call/${d?.owner}`, {
+                        state: {
+                          message: "Regarding your card: 1pm discussion",
+                          cardId: d._id,
+                        },
+                      })
+                    }
+                  >
+                    <i className="bi bi-camera-video-fill"></i>
+                  </button>
+                  {(isOwner || isAdmin) && (
+                    <>
+                      <button
+                        onClick={() =>
+                          navigate(`/discussion-form-edit/${d?._id}`)
+                        }
+                        className="card-last-right1"
+                      >
+                        <i className="bi bi-pencil"></i>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDiscussion(d?._id)}
+                        className="btn btn-danger"
+                      >
+                        {loading ? (
+                          <span className="spinner-border spinner-border-sm me-2" />
+                        ) : (
+                          <i className="bi bi-trash"></i>
+                        )}
+                      </button>
+                    </>
                   )}
-                </button>
 
-                <button onClick={endCall} className="btn btn-danger">
-                  <i className="bi bi-telephone-x-fill"></i>
-                </button>
+                  <button onClick={endCall} className="btn btn-danger">
+                    <i className="bi bi-telephone-x-fill"></i>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
