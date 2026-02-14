@@ -126,9 +126,9 @@ export default function HomePageMiddle({
             <div className="box">
               <div className="">
                 <span className="keyword"></span>
-                <span className="box-title">
+                {/* <span className="box-title">
                   How AI is Changing Web Development in 2026
-                </span>
+                </span> */}
                 <br></br>
                 <p className="card-text">{d?.remarks}</p>
                 <span className="card-keyword">
