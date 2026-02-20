@@ -104,7 +104,7 @@ export default function HomePageMiddle({
         </Draggable>
       )}
 
-      <div className="center w-full sm:w-[98%] sm:bg-red-50 lg:w-[35rem] lg:bg-white md:bg-white overflow-x-auto">
+      <div className="center sm:w-[98%] sm:bg-red-50 lg:w-[35rem] lg:bg-white md:bg-white overflow-x-auto" style={{width:"100%"}}>
         {/* <div className=" center  w-full  bg-white sm:w-full md:w-[31rem] lg:w-[35rem] lg:bg-green-100"> */}
         {filterDiscussion.map((d) => {
           const isOwner = d.owner === user?._id;

@@ -33,7 +33,7 @@ export function MainPageHeading({ user }) {
             className="search-input"
           />
         </div>
-        <div className="button" style={{ marginLeft: "10rem" }} >
+        <div className="d-flex justify-center" style={{ marginLeft: "10rem" }} >
           <button
             className={`logo ${scrolled ? "logo-scrolled" : ""} button-2`}
             onClick={() =>
