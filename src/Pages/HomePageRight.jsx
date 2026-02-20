@@ -35,7 +35,7 @@ export default function HomePageRight({
         {chatOpen && (
           <div className="mt-5">
             <ul
-              className="list-group p-0 border rounded-4 border-dark bg-[#FFFFFF] fixed z-[9999] bottom-[3rem] w-[17.25rem] right-[3.5rem] h-[40rem]"
+              className="list-group p-0 border rounded-4 border-dark bg-[#FFFFFF] fixed z-[9999] bottom-[3rem] w-[17.25rem] h-[40rem]"
               style={{ textAlign: "left" }}
             >
               {" "}

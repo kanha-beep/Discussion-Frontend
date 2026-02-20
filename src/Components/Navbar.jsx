@@ -183,7 +183,7 @@ export default function Navbar() {
           <button className="btn text-white" onClick={() => navigate("/")}>
             <i className="bi bi-house fs-5"></i>
           </button>
-          <button className="btn text-white">
+          <button className="btn text-white" onClick={() => setMobileChatOpen(true)}>
             <i className="bi bi-chat-dots fs-5"></i>
           </button>
           <button

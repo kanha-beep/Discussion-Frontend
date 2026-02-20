@@ -15,6 +15,7 @@ export default function PrivateRoom() {
 
   const [participants, setParticipants] = useState([]);
   const [chat, setChat] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [activeTab, setActiveTab] = useState("video"); // video | chat
   const [participantCount, setParticipantCount] = useState(0);
@@ -201,6 +202,41 @@ export default function PrivateRoom() {
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, []);
+  useEffect(() => {
+    console.log("Requesting audio permissions...");
+    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      console.log("Audio permissions granted, starting recording...");
+      const mediaRecorder = new MediaRecorder(stream);
+
+      mediaRecorder.ondataavailable = async (event) => {
+        const audioBlob = event.data;
+        // console.log("Audio blob created:", audioBlob);
+        const res = await fetch("http://localhost:3000/api/discussion/audio", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/octet-stream",
+          },
+          body: audioBlob,
+        });
+
+        const data = await res.json();
+        console.log("Response from server:", data);
+        setMessages((prev) => [...prev, { role: "bot", text: data.reply }]);
+
+        console.log("Text:", data.reply);
+      };
+
+      mediaRecorder.start(); // send every 2 seconds
+      
+      setInterval(() => {
+
+            if (mediaRecorder.state === "recording") {
+                mediaRecorder.requestData();  // sends complete valid blob
+            }
+
+        }, 5000);
+    });
+  }, []);
 
   return (
     <div className="" style={{ marginTop: "10rem" }}>
@@ -231,13 +267,17 @@ export default function PrivateRoom() {
 
             {participants.map((s, i) => (
               <div key={s?.socketId}>
-                <video key={i} autoPlay ref={(v) => v && (v.srcObject = s?.stream)} />
+                <video
+                  key={i}
+                  autoPlay
+                  ref={(v) => v && (v.srcObject = s?.stream)}
+                />
                 {isHost && (
                   <button
                     onClick={() =>
                       socket.emit("kick-user", {
                         roomId,
-                        socketId: s.socketId
+                        socketId: s.socketId,
                         // socketId: Object.keys(peersRef.current).find(
                         //   (id) =>
                         //     peersRef.current[id]?.getReceivers()?.[0]?.track

@@ -75,10 +75,10 @@ export default function DiscussionForm() {
   };
 
   return (
-    <div className="min-vh-100 d-flex align-items-center mt-5">
+    <div className="min-vh-100 d-flex align-items-center mt-3 w-full">
       <div className="container">
         <div className="row justify-content-center">
-          <div className="col-md-6 col-lg-8">
+          <div className="col-md-10 col-lg-8">
             <div className="card shadow-lg border-0 rounded-4">
               <div className="card-body p-5">
                 <div className="text-center mb-4">

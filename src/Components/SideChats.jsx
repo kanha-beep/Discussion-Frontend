@@ -14,11 +14,11 @@ export default function SideChats({
 }) {
   console.log("get messages: ", activeMessages);
   return (
-    <div>
+    <div className="relative">
       {sideActiveUser && chatOpen && sideChatOpen && (
         <>
           <div
-            className="border position-fixed bg-[#FFFFFF] rounded-4 p-2 bottom-[1rem] right-[22.75rem] w-[17.5rem] border-dark"
+            className="border position-fixed bg-[#FFFFFF] rounded-top-4 rounded-bottom-0 p-2 bottom-[2.5rem] right-[20rem] w-[15.5rem] border-dark"
             style={{ height: "30rem", overflowY: "auto" }}
           >
             <ActiveMessages
@@ -28,7 +28,7 @@ export default function SideChats({
             />
           </div>
           {/* message box send */}
-          <div className="border d-flex position-fixed bg-white rounded-2 p-2 bottom-[2rem] right-[22.75rem] w-[17.5rem]">
+          <div className="border-end border-start border-dark d-flex position-fixed bg-white rounded-2 p-2 bottom-[2rem] right-[20rem] w-[15.5rem]">
             <input
               className="form-control"
               value={chatMsg}

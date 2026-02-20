@@ -407,6 +407,7 @@ export default function HomePage() {
               {activeUser && (
                 <>
                   <div className="chat-messages">
+                    <button onClick={() => setActiveUser(null)}>Back</button>
                     {activeMessages.map((m) => (
                       <div key={m._id}>
                         <b>
