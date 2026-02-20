@@ -139,9 +139,9 @@ export default function Auth({ checkAuth }) {
       <div className="container">
         <div className="row justify-content-center">
           <div className="col-md-6 col-lg-8">
-            <div className="card shadow-lg border-0 rounded-4">
+            <div className="card shadow-lg border-0 rounded-4 mt-5">
               {/* Everything is inside card body */}
-              <div className="card-head p-5">
+              <div className="card-head py-5">
                 {" "}
                 <div className="text-center">
                   <i className="fas fa-plane text-primary fs-1 mb-3"></i>
@@ -178,7 +178,7 @@ export default function Auth({ checkAuth }) {
                 </div>
               )}
               {viewPage !== "congratulations" && (
-                <div className="card-body p-5" style={{ marginTop: "-5rem" }}>
+                <div className="card-body" style={{ marginTop: "-5rem" }}>
                   {/* buttons */}
                   <div className="d-flex mb-4 bg-light rounded-3 p-1">
                     <button
