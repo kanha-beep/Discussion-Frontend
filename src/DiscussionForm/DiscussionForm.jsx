@@ -80,7 +80,7 @@ export default function DiscussionForm() {
         <div className="row justify-content-center">
           <div className="col-md-10 col-lg-8">
             <div className="card shadow-lg border-0 rounded-4">
-              <div className="card-body p-5">
+              <div className="card-body lg:p-5">
                 <div className="text-center mb-4">
                   <h2 className="fw-bold text-dark mb-2">Create Discussion</h2>
                   {/* <p className="text-muted">Start a new discussion</p> */}
