@@ -202,42 +202,112 @@ export default function PrivateRoom() {
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, []);
+  // useEffect(() => {
+  //   let mediaRecorder;
+  //   let chunks = [];
+
+  //   navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+  //     mediaRecorder = new MediaRecorder(stream, {
+  //       mimeType: "audio/webm;codecs=opus",
+  //     });
+
+  //     chunks = [];
+
+  //     mediaRecorder.ondataavailable = (event) => {
+  //       if (event.data.size > 0) {
+  //         chunks.push(event.data);
+  //       }
+  //     };
+
+  //     mediaRecorder.onstop = async () => {
+  //       try {
+  //         const blob = new Blob(chunks, { type: "audio/webm" });
+  //       const arrayBuffer = await blob.arrayBuffer();
+
+  //       const res = await fetch("http://localhost:3000/api/discussion/audio", {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/octet-stream",
+  //         },
+  //         body: arrayBuffer,
+  //       });
+
+  //       const data = await res.json();
+  //       console.log("Response from server:", data);
+
+  //       setMessages((prev) => [...prev, { role: "bot", text: data.reply }]);
+  //       } catch (error) {
+  //         console.error("Error sending audio:", error);
+  //       }
+
+  //     };
+
+  //     mediaRecorder.start();
+
+  //     // Stop after 5 seconds
+  //     setTimeout(() => {
+  //       mediaRecorder.stop();
+  //     }, 5000);
+  //   });
+  // }, []);
   useEffect(() => {
-    console.log("Requesting audio permissions...");
-    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-      console.log("Audio permissions granted, starting recording...");
-      const mediaRecorder = new MediaRecorder(stream);
+    let stream;
+    let stopped = false;
 
-      mediaRecorder.ondataavailable = async (event) => {
-        const audioBlob = event.data;
-        // console.log("Audio blob created:", audioBlob);
-        const res = await fetch("http://localhost:3000/api/discussion/audio", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/octet-stream",
-          },
-          body: audioBlob,
-        });
+    const recordOnce = () => {
+      if (stopped) return;
 
-        const data = await res.json();
-        console.log("Response from server:", data);
-        setMessages((prev) => [...prev, { role: "bot", text: data.reply }]);
+      let chunks = [];
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: "audio/webm;codecs=opus",
+      });
 
-        console.log("Text:", data.reply);
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) chunks.push(event.data);
       };
 
-      mediaRecorder.start(); // send every 2 seconds
-      
-      setInterval(() => {
+      mediaRecorder.onstop = async () => {
+        try {
+          const blob = new Blob(chunks, { type: "audio/webm" });
 
-            if (mediaRecorder.state === "recording") {
-                mediaRecorder.requestData();  // sends complete valid blob
-            }
+          const res = await fetch(
+            "http://localhost:3000/api/discussion/audio",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/octet-stream" },
+              body: blob, // blob is fine; no need arrayBuffer
+            },
+          );
 
-        }, 5000);
-    });
+          const data = await res.json();
+          console.log("Response from server:", data);
+
+          setMessages((prev) => [...prev, { role: "bot", text: data.reply }]);
+        } catch (e) {
+          console.log("Upload/whisper error:", e);
+        } finally {
+          // ✅ Start next recording cycle after this one finishes
+          if (!stopped) recordOnce();
+        }
+      };
+
+      mediaRecorder.start();
+
+      setTimeout(() => {
+        if (mediaRecorder.state === "recording") mediaRecorder.stop();
+      }, 5000);
+    };
+
+    (async () => {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordOnce(); // ✅ start first cycle
+    })();
+
+    return () => {
+      stopped = true;
+      if (stream) stream.getTracks().forEach((t) => t.stop());
+    };
   }, []);
-
   return (
     <div className="" style={{ marginTop: "10rem" }}>
       <h1 className="mt-5">Private Room</h1>
@@ -347,6 +417,13 @@ export default function PrivateRoom() {
                       <b>{m.sender?.name || "User"}:</b> {m.text}
                     </div>
                   ))}
+                  <div className="notes">
+                    {messages.map((m, i) => (
+                      <div key={i}>
+                        <b>{m.role === "user" ? "You" : "Bot"}:</b> {m.text}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div

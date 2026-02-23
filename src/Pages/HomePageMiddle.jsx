@@ -146,7 +146,7 @@ export default function HomePageMiddle({
               </div>
               {/* footer */}
               <div className="card-last">
-                <span className="card-last-left text-truncate">
+                <span className="">
                   {new Date(d?.createdAt).toLocaleDateString("en-IN", {
                     day: "2-digit",
                     month: "short",
