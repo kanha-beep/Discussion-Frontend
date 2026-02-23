@@ -271,7 +271,7 @@ export default function PrivateRoom() {
           const blob = new Blob(chunks, { type: "audio/webm" });
 
           const res = await fetch(
-            `${import.meta.env.VITE_API_URL}/api/audio`,
+            `${import.meta.env.VITE_API_URL}/api/discussion/audio`,
             {
               method: "POST",
               headers: { "Content-Type": "application/octet-stream" },
