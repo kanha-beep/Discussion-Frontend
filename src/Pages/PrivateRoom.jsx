@@ -39,7 +39,10 @@ export default function PrivateRoom() {
     });
     setText("");
   };
-
+  const speak = (text) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    speechSynthesis.speak(utterance);
+  };
   useEffect(() => {
     if (!roomId || !socket) return;
     const init = async () => {
@@ -58,7 +61,9 @@ export default function PrivateRoom() {
     socket.on("host", () => {
       setIsHost(true);
     });
-
+    socket.on("room-message", (msg) => {
+      speak(msg.text);
+    });
     // server sends waiting list
     socket.on("waiting-users", (users) => {
       setWaitingUsers(users);
