@@ -6,9 +6,10 @@ import { useContext } from "react";
 import { UserContext } from "../Components/UserContext.js";
 import WhiteBoard from "../Pages/WhiteBoard.jsx";
 export default function PrivateRoom() {
+  const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
   const { roomId } = useParams();
-  const { user } = useContext(UserContext);
+  const { user, brief, setBrief } = useContext(UserContext);
   const localVideoRef = useRef(null);
   const peersRef = useRef({}); // socketId -> pc
   const localStreamRef = useRef(null);
@@ -43,6 +44,18 @@ export default function PrivateRoom() {
     const utterance = new SpeechSynthesisUtterance(text);
     speechSynthesis.speak(utterance);
   };
+  useEffect(() => {
+    const join = () => {
+      // console.log("JOINING BOT ROOM:", roomId);
+      socket.emit("join-room", { roomId, user: user?._id || "guest" });
+      // console.log("BOT JOINED GUEST")
+    };
+
+    if (socket.connected) join(); // ✅ important
+    socket.on("connect", join);
+    // console.log("JOINED")
+    return () => socket.off("connect", join);
+  }, [roomId, user]);
   useEffect(() => {
     if (!roomId || !socket) return;
     const init = async () => {
@@ -105,6 +118,35 @@ export default function PrivateRoom() {
       delete peersRef.current[id];
       setParticipants((prev) => prev.filter((s) => s.id !== id));
     });
+    function playNextAudio() {
+      if (isPlaying || audioQueue.length === 0) return;
+
+      const url = audioQueue.shift();
+      const audio = new Audio(url);
+
+      isPlaying = true;
+
+      audio.onended = () => {
+        isPlaying = false;
+        playNextAudio();
+      };
+
+      audio.play().catch((e) => console.log(e));
+    }
+    let audioQueue = [];
+    let isPlaying = false;
+    socket.on("bot-voice", (data) => {
+      console.log("1. Got bot voice: ", data?.audio_url);
+      console.log("2. Got bot name: ", data?.bot);
+      // console.log("3. Got bot text Summary: ", data?.text)
+      if (!data.audio_url || data.audio_url.endsWith("/audio/")) return; // skip empty
+      // const fullUrl = `http://127.0.0.1:8000${data.audio_url}`;
+      audioQueue.push(data?.audio_url);
+      if (!isPlaying) {
+        playNextAudio(); // ✅ only start when idle
+      }
+      console.log("Media queue: ", audioQueue);
+    });
 
     return () => {
       socket.off("admitted");
@@ -143,12 +185,6 @@ export default function PrivateRoom() {
 
     return pc;
   };
-
-  // const attachRemoteStream = (stream) => {
-  //   setParticipants((prev) =>
-  //     prev.some((s) => s.id === stream.id) ? prev : [...prev, stream],
-  //   );
-  // };
   const attachRemoteStream = (stream, socketId) => {
     setParticipants((prev) =>
       prev.some((p) => p.socketId === socketId)
@@ -168,7 +204,7 @@ export default function PrivateRoom() {
       .getVideoTracks()
       .forEach((t) => (t.enabled = !t.enabled));
   };
-  console.log("active tab: ", activeTab);
+  // console.log("active tab: ", activeTab);
   const endCall = () => {
     // 1. Stop local media tracks (MOST IMPORTANT)
     if (localStreamRef.current) {
@@ -207,54 +243,6 @@ export default function PrivateRoom() {
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, []);
-  // useEffect(() => {
-  //   let mediaRecorder;
-  //   let chunks = [];
-
-  //   navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-  //     mediaRecorder = new MediaRecorder(stream, {
-  //       mimeType: "audio/webm;codecs=opus",
-  //     });
-
-  //     chunks = [];
-
-  //     mediaRecorder.ondataavailable = (event) => {
-  //       if (event.data.size > 0) {
-  //         chunks.push(event.data);
-  //       }
-  //     };
-
-  //     mediaRecorder.onstop = async () => {
-  //       try {
-  //         const blob = new Blob(chunks, { type: "audio/webm" });
-  //       const arrayBuffer = await blob.arrayBuffer();
-
-  //       const res = await fetch("http://localhost:3000/api/discussion/audio", {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/octet-stream",
-  //         },
-  //         body: arrayBuffer,
-  //       });
-
-  //       const data = await res.json();
-  //       console.log("Response from server:", data);
-
-  //       setMessages((prev) => [...prev, { role: "bot", text: data.reply }]);
-  //       } catch (error) {
-  //         console.error("Error sending audio:", error);
-  //       }
-
-  //     };
-
-  //     mediaRecorder.start();
-
-  //     // Stop after 5 seconds
-  //     setTimeout(() => {
-  //       mediaRecorder.stop();
-  //     }, 5000);
-  //   });
-  // }, []);
   useEffect(() => {
     let stream;
     let stopped = false;
@@ -279,15 +267,43 @@ export default function PrivateRoom() {
             `${import.meta.env.VITE_API_URL}/api/discussion/audio`,
             {
               method: "POST",
-              headers: { "Content-Type": "application/octet-stream" },
+              headers: {
+                "Content-Type": "application/octet-stream",
+                "x-room-id": roomId,
+              },
               body: blob, // blob is fine; no need arrayBuffer
             },
           );
 
           const data = await res.json();
-          console.log("Response from server:", data);
+          // console.log("RAW DATA:", data);
+          // console.log("audio_url:", data?.audio_url);
+          // console.log("brief:", data?.brief);
+          // console.log("bot:", data?.bot);
+          if (data?.brief) {
+            setBrief(data?.brief);
+            // console.log("Response from server:", data?.brief);
+            localStorage.setItem("brief", data.brief);
+          }
+          // console.log("audio starts");
+          const audio = new Audio("http://127.0.0.1:8000" + data.audio_url);
+          console.log("Playing audio from URL:", audio.src, data.audio_url);
+          // audio.oncanplay = () => audio.play()
+          document.addEventListener(
+            "click",
+            () => {
+              audio.play();
+            },
+            { once: true },
+          );
 
-          setMessages((prev) => [...prev, { role: "bot", text: data.reply }]);
+          setErrorMsg(data.msg || "");
+          setMessages((prev) => {
+            const filtered = prev.filter((msg) => msg.bot !== "bot.summary");
+            return [...filtered, { bot: "bot.summary", text: data.reply }];
+          });
+
+          // setMessages((prev) => [...prev, { role: "bot", text: data.reply }]);
         } catch (e) {
           console.log("Upload/whisper error:", e);
         } finally {
@@ -313,32 +329,61 @@ export default function PrivateRoom() {
       if (stream) stream.getTracks().forEach((t) => t.stop());
     };
   }, []);
+  const lastSummary = messages.findLast((m) => m.bot === "bot.summary")?.text;
+  function downloadSummary(text) {
+    if (!text) return;
+
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "summary.txt";
+    a.click();
+
+    URL.revokeObjectURL(url);
+  }
   return (
-    <div className="" style={{ marginTop: "10rem" }}>
-      <h1 className="mt-5">Private Room</h1>
+    <div className="mt-[5rem] min-h-screen">
+      {errorMsg && <div className="alert alert-danger">{errorMsg}</div>}
+      {participants.length === 0 && (
+        <div className="bg-light font-bold mb-2">Waiting for others…</div>
+      )}
       <div className="room-page">
-        <div className="room-tabs">
-          <button onClick={() => setActiveTab("video")}>Video</button>
-          <button onClick={() => setActiveTab("chat")}>Chat</button>
+        <div className=" flex justify-around mb-1">
           <button
-            className="navbar-brand fw-bold text-white bg-dark"
+            className="btn btn-primary"
+            onClick={() => setActiveTab("video")}
+          >
+            Video
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={() => setActiveTab("chat")}
+          >
+            Chat
+          </button>
+          <button
+            className="navbar-brand fw-bold btn btn-secondary text-white"
             onClick={() => setActiveTab("board")}
             style={{ border: 0 }}
           >
             White Board
           </button>
+          <button
+            className="btn btn-primary"
+            onClick={() => downloadSummary(lastSummary)}
+          >
+            Download Summary
+          </button>
         </div>
 
         <div
-          className="room-page bg-success d-flex"
+          className="room-page bg-light d-flex"
           style={{ display: activeTab === "video" ? "block" : "none" }}
         >
           <div>
             <video ref={localVideoRef} autoPlay muted />
-
-            {participants.length === 0 && (
-              <div className="empty-tile">Waiting for others…</div>
-            )}
 
             {participants.map((s, i) => (
               <div key={s?.socketId}>
@@ -368,25 +413,58 @@ export default function PrivateRoom() {
                 )}
               </div>
             ))}
-
-            <button onClick={toggleAudio}>Mute</button>
-            <button onClick={toggleVideo}>Camera</button>
-            <button
-              onClick={endCall}
-              style={{ background: "red", color: "white" }}
-            >
-              End Call
-            </button>
+            <div className="flex gap-5 items-center">
+              <button onClick={toggleAudio}>
+                <i className="bi bi-mic-mute"></i>
+              </button>
+              <button onClick={toggleVideo}>
+                <i className="bi bi-camera"></i>
+              </button>
+              <button onClick={endCall} className="btn btn-danger h-[2.5rem]">
+                <i className="bi bi-telephone-x-fill"></i>
+              </button>
+            </div>
           </div>
+          {activeTab === "chat" && (
+            <div className="room-chat">
+              <div className="chat-messages">
+                {chat.map((m, i) => (
+                  <div key={i}>
+                    <b>{m.sender?.name || "User"}:</b> {m.text}
+                  </div>
+                ))}
+                <div className="notes" style={{ whiteSpace: "pre-wrap" }}>
+                  {messages.map((m, i) => (
+                    <div key={i}>
+                      <b>{m.role === "user" ? "You" : "Bot"}:</b> {m.text}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                className="chat-input position-absolute bg-danger"
+                style={{ marginBottom: "2rem" }}
+              >
+                <input
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="Message room…"
+                />
+                <button onClick={sendMsg}>Send</button>
+              </div>
+            </div>
+          )}
           <div>
             {isHost && waitingUsers.length > 0 && (
               <div
                 style={{ background: "#222", color: "white", padding: "10px" }}
               >
-                <h3>Waiting Users</h3>
-
+                <span className="bg-gray-300/20 p-2 inline italic">
+                  Waiting
+                </span>
                 {waitingUsers.map((u) => (
-                  <div key={u.socketId} style={{ marginBottom: "5px" }}>
+                  <div key={u.socketId} className="mb-[5px] mt-1">
                     {u.name}
 
                     <button
@@ -397,7 +475,7 @@ export default function PrivateRoom() {
                         })
                       }
                     >
-                      Admit
+                      <span className="btn btn-success mt-1">Admit</span>
                     </button>
 
                     <button
@@ -408,40 +486,10 @@ export default function PrivateRoom() {
                         })
                       }
                     >
-                      Reject
+                      <span className="btn btn-danger ml-2 mt-1">Reject</span>
                     </button>
                   </div>
                 ))}
-              </div>
-            )}
-            {activeTab === "chat" && (
-              <div className="room-chat">
-                <div className="chat-messages">
-                  {chat.map((m, i) => (
-                    <div key={i}>
-                      <b>{m.sender?.name || "User"}:</b> {m.text}
-                    </div>
-                  ))}
-                  <div className="notes">
-                    {messages.map((m, i) => (
-                      <div key={i}>
-                        <b>{m.role === "user" ? "You" : "Bot"}:</b> {m.text}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div
-                  className="chat-input position-absolute bg-danger"
-                  style={{ marginBottom: "2rem" }}
-                >
-                  <input
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder="Message room…"
-                  />
-                  <button onClick={sendMsg}>Send</button>
-                </div>
               </div>
             )}
           </div>
@@ -451,3 +499,25 @@ export default function PrivateRoom() {
     </div>
   );
 }
+
+// let currentAudio = null;
+
+// socket.on("bot-voice", ({ audio_url }) => {
+//   if (currentAudio) currentAudio.pause();
+
+//   const audio = new Audio(audio_url);
+//   currentAudio = audio;
+
+//   audio.oncanplaythrough = () => {
+//     audio.play().catch((e) => console.log(e));
+//   };
+// });
+// socket.on("bot-voice", ({ audio_url }) => {
+//   console.log("audio: ", audio_url);
+//   let audio = new Audio(audio_url);
+//   console.log("final audio received");
+//   audio.oncanplaythrough = () => {
+//     audio.play().catch((e) => console.log(e));
+//   };
+//   // audio.play().catch((e) => console.log("Autoplay blocked:", e));
+// });

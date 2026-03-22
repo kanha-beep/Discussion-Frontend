@@ -10,10 +10,22 @@ export function MainPageHeading({ user }) {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShow(true), 2000);
+    return () => clearTimeout(t);
+  }, []);
+
   const navigate = useNavigate();
   return (
     <div>
-      <div className="hero">
+      <div
+      className="hero"
+        // className={`${
+        //   show ? "opacity-100" : "opacity-0"
+        // } transition-opacity duration-700 bg-yellow-50 mt-48 p-6`}
+      >
         <h1 className="hero-1">
           Ask • <b style={{ color: "#283E4A" }}>Discuss</b> • Learn
         </h1>
@@ -33,7 +45,7 @@ export function MainPageHeading({ user }) {
             className="search-input"
           />
         </div>
-        <div className="d-flex justify-center" style={{ marginLeft: "10rem" }} >
+        <div className="d-flex justify-center" style={{ marginLeft: "10rem" }}>
           <button
             className={`logo ${scrolled ? "logo-scrolled" : ""} button-2`}
             onClick={() =>

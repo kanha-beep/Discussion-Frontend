@@ -25,9 +25,9 @@ export default function HomePageRight({
 }) {
   const [sideActiveUser, setSideActiveUser] = useState(null);
   return (
-    <div className="">
+    <div>
       {/* <div className="right-side d-none d-lg-block lg:bg-green-100 lg:w-[15rem] md:bg-green-500 md:w-[15rem]"> */}
-      <div className="right-side w-full d-none d-lg-block bg-white sm:w-full md:w-[14rem] md:mr-[2rem] md:bg-green-500 lg:w-[15rem] lg:mr-[4rem] lg:bg-green-100">
+      <div className="right-side w-full d-none d-lg-block bg-white sm:w-full md:w-[14rem] md:mr-[2rem] md:bg-green-500 lg:w-[22rem] lg:mr-[4rem] lg:bg-green-100">
         {/* advt */}
         <Advertisement />
         <ChatOpen

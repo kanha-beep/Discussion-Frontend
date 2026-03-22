@@ -17,7 +17,7 @@ export default function ChatOpen({
       {chatOpen && (
         <div className="mt-5">
           <ul
-            className="list-group p-0 border rounded-4 border-dark bg-[#FFFFFF] fixed z-[9999] bottom-[3rem] w-[17.25rem] h-[40rem]"
+            className="list-group p-0 border rounded-4 border-dark bg-[#FFFFFF] fixed right-2 z-[9999] bottom-[2.4rem] w-[17.25rem] h-[40rem]"
             style={{ textAlign: "left"}}
           >
             {" "}

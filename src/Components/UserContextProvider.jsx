@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { UserContext } from "./UserContext.js";
-import { useNavigate } from "react-router-dom";
 export const UserContextProvider = ({ children }) => {
   const [navigateFn, setNavigateFn] = useState(null);
   const [showMsg, setShowMsg] = useState(null);
@@ -22,10 +21,12 @@ export const UserContextProvider = ({ children }) => {
   const [chatUsers, setChatUsers] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
   const [messagesByChat, setMessagesByChat] = useState({});
-
+  const [brief, setBrief] = useState("");
   return (
     <UserContext.Provider
       value={{
+        brief,
+        setBrief,
         setNavigateFn,
         navigateFn,
         showMsg,

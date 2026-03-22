@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import { api } from "../../api";
 import Draggable from "react-draggable";
 import FloatingVideo from "../Components/FloatingVideo";
-import { UserContext } from "../Components/UserContext";
+import { UserContext } from "../Components/UserContext.js";
 export default function HomePageMiddle({
   filterDiscussion,
   navigate,
@@ -21,13 +21,30 @@ export default function HomePageMiddle({
   socket,
   setFilterDiscussion,
 }) {
-  const { user } = useContext(UserContext);
+  const { user, brief, setBrief } = useContext(UserContext);
   const roomId = activeChatId;
   const [roomLoading, setRoomLoading] = useState(false);
-  console.log("show vidoe: ", showVideo);
+  console.log("show video: ", showVideo);
   const dragRef = useRef(null);
   const [roomCounts, setRoomCounts] = useState({});
-
+  // useEffect(() => {
+  //   const id = setInterval(() => {
+  //     console.log("1. Got brief:", brief);
+  //   }, []);
+  //   return () => clearInterval(id);
+  // }, [brief]);
+  const briefText =
+    brief === null || brief === undefined || brief === ""
+      ? "No summary/brief available"
+      : Array.isArray(brief)
+        ? brief.join("\n")
+        : typeof brief === "object"
+          ? JSON.stringify(brief, null, 2)
+          : String(brief);
+    const briefLocal = localStorage.getItem("brief")
+  useEffect(() => {
+    console.log("1. Got brief local:", briefLocal);
+  }, []);
   const createRoom = async (roomId, existingRoomId) => {
     setRoomLoading(true);
     console.log("1. create room started: ", roomId, existingRoomId);
@@ -55,6 +72,7 @@ export default function HomePageMiddle({
     }
   };
   console.log("roomCounts state:", roomCounts);
+
   useEffect(() => {
     if (!socket || !filterDiscussion?.length) return;
 
@@ -104,7 +122,10 @@ export default function HomePageMiddle({
         </Draggable>
       )}
 
-      <div className="center sm:w-[98%] sm:bg-red-50 lg:w-[35rem] lg:bg-white md:bg-white overflow-x-auto" style={{width:"100%"}}>
+      <div
+        className="center sm:w-full md:w-[120%] lg:w-[35rem] overflow-x-auto relative left-1/2 -translate-x-1/2"
+        // style={{ width: "100%" }}
+      >
         {/* <div className=" center  w-full  bg-white sm:w-full md:w-[31rem] lg:w-[35rem] lg:bg-green-100"> */}
         {filterDiscussion.map((d) => {
           const isOwner = d.owner === user?._id;
@@ -131,9 +152,12 @@ export default function HomePageMiddle({
               <div className="box">
                 <div className="">
                   <span className="keyword"></span>
-                  {/* <span className="box-title">
-                  How AI is Changing Web Development in 2026
-                </span> */}
+                  <div className="brief-box p-2 mb-3 border rounded bg-light">
+                    <h5 className="mb-1">Latest private-room brief</h5>
+                    <pre style={{ whiteSpace: "pre-wrap", margin: 0 }}>
+                      {briefText}
+                    </pre>
+                  </div>
                   <br></br>
                   <p className="card-text">{d?.remarks}</p>
                   <span className="card-keyword">
@@ -156,15 +180,15 @@ export default function HomePageMiddle({
                     hour12: true,
                   })}
                 </span>
-                <div className="card-last-right">
+                <div className="flex items-center gap-3">
                   <button onClick={() => createRoom(d._id, d.roomId?._id)}>
-                    {d.roomId?._id ? "Join Room" : "Create Room"}
+                    {d.roomId?._id ? "Join" : "Create"}
                   </button>
                   <span
                     className="bg-success text-truncate d-flex align-items-center badge"
                     style={{ width: "50%", height: "50%" }}
                   >
-                    participants {roomCounts[String(d.roomId?._id)] ?? 0}
+                    Members {roomCounts[String(d.roomId?._id)] ?? 0}
                   </span>
 
                   <button
@@ -185,7 +209,7 @@ export default function HomePageMiddle({
                         onClick={() =>
                           navigate(`/discussion-form-edit/${d?._id}`)
                         }
-                        className="card-last-right1"
+                        className="card-last-right1 h-[2.45rem]"
                       >
                         <i className="bi bi-pencil"></i>
                       </button>
@@ -202,9 +226,9 @@ export default function HomePageMiddle({
                     </>
                   )}
 
-                  <button onClick={endCall} className="btn btn-danger">
+                  {/* <button onClick={endCall} className="btn btn-danger">
                     <i className="bi bi-telephone-x-fill"></i>
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </div>

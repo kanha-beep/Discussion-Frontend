@@ -359,7 +359,7 @@
 }
 .center-card-name{
 display: flex;
-justify-content: space-arounds;
+justify-content: space-around;
   
 }
 .card{
