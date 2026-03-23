@@ -65,8 +65,8 @@ export default function DiscussionForm() {
   };
 
   return (
-    <div className="min-vh-100 d-flex align-items-center mt-5 pt-4 pb-5">
-      <div className="container">
+    <div className="min-vh-100 d-flex align-items-center mt-5 pt-4 pb-5 overflow-hidden">
+      <div className="container px-3 px-sm-4">
         <div className="row justify-content-center">
           <div className="col-11 col-sm-10 col-md-8 col-lg-7">
             <div className="card shadow-lg border-0 rounded-4">
@@ -75,16 +75,17 @@ export default function DiscussionForm() {
                   <h2 className="fw-bold text-dark mb-2">Create Discussion</h2>
                 </div>
 
-                <form onSubmit={handleSubmit} className="row">
+                <form onSubmit={handleSubmit}>
             
 
                   <div className="mb-3">
                     <label className={labelBox}>
                       <i className="fas fa-tags me-2"></i>Keywords
                     </label>
-                    <div className="form-group d-flex gap-2">
+                    <div className="form-group d-flex flex-column flex-sm-row gap-2">
                       <input
-                        className={inputBox}
+                        className={`${inputBox} w-100`}
+                        style={{ minWidth: 0 }}
                         onChange={(e) => setKeyList(e.target.value)}
                         value={keyList}
                         name="keyList"
@@ -98,7 +99,7 @@ export default function DiscussionForm() {
                       <button
                         onClick={handleAddKeywords}
                         type="button"
-                        className="btn btn-primary btn-sm px-3"
+                        className="btn btn-primary btn-sm px-3 align-self-stretch align-self-sm-auto"
                       >
                         Add
                       </button>
