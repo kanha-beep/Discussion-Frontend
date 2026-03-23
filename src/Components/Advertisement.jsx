@@ -21,8 +21,8 @@ export default function Advertisement() {
     getNews();
   }, []);
   return (
-    <div>
-      <h2 className="news-title">LATEST NEWS</h2>
+    <div style={{ marginTop: 0, paddingTop: 0 }}>
+      <h2 className="news-title" style={{ marginTop: 0 }}>LATEST NEWS</h2>
       <ul className="news overflow-y-auto h-[20rem]">
         {newsList.slice(0, 3).map((news, index) => (
           <li className="news-1 bg-green mb-5" key={index}>

@@ -16,27 +16,32 @@ export default function SideChats({
   return (
     <div className="relative">
       {sideActiveUser && chatOpen && sideChatOpen && (
-        <>
-          <div
-            className="border position-fixed bg-[#FFFFFF] rounded-top-4 rounded-bottom-0 p-2 bottom-[2.5rem] right-[20rem] w-[15.5rem] border-dark"
-            style={{ height: "30rem", overflowY: "auto" }}
-          >
+        <div
+          className="fixed bottom-14 right-4 z-[9999] flex h-[36rem] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.18)] md:right-[26rem]"
+        >
+          <div className="min-h-0 flex-1 overflow-hidden">
             <ActiveMessages
               activeMessages={activeMessages}
               user={user}
               sideActiveUser={sideActiveUser}
             />
           </div>
-          {/* message box send */}
-          <div className="border-end border-start border-dark d-flex position-fixed bg-white rounded-2 p-2 bottom-[2rem] right-[20rem] w-[15.5rem]">
+          <div className="flex items-center gap-2 border-t border-slate-200 bg-white p-3">
             <input
-              className="form-control"
+              className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:bg-white"
               value={chatMsg}
               onChange={(e) => setChatMsg(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleSubmitChat();
+                }
+              }}
+              placeholder="Type a message..."
             />
             <SendMessageButton handleSubmitChat={handleSubmitChat} />
           </div>
-        </>
+        </div>
       )}
     </div>
   );

@@ -17,6 +17,13 @@ export default function DiscussionForm() {
     keywords: [],
     remarks: "",
   });
+  useEffect(() => {
+    if (!userEmail) return;
+    setDisForm((prev) => ({
+      ...prev,
+      email: userEmail,
+    }));
+  }, [userEmail]);
   const getSingleDiscussion = async () => {
     try {
       console.log("discussion id: ", discussionId);

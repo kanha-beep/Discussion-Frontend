@@ -10,20 +10,13 @@ export default function Navbar() {
     setIsLoggedIn,
     user,
     setFilterDiscussion,
-    chatOpen,
     setMobileChatOpen,
-    setShowMsg,
-    showMsg,
   } = useContext(UserContext);
   const [logoutLoading, setLogoutLoading] = useState(false);
-  const [question, setQuestion] = useState("");
-  const [messages, setMessages] = useState([
-    { role: "bot", text: "Hello! How can I help you today?" },
-  ]);
   const [view, setView] = useState(1);
 
   const [search, setSearch] = useState("");
-  const [scrolled, setScrolled] = useState(false); // ✅ NEW
+  const [showNavbarSearch, setShowNavbarSearch] = useState(false);
   const navigate = useNavigate();
   const handleLogout = async () => {
     setLogoutLoading(true);
@@ -39,13 +32,14 @@ export default function Navbar() {
       setLogoutLoading(false);
     }
   };
-  // 🔥 SCROLL EFFECT
   useEffect(() => {
-    const onScroll = () => {
-      setScrolled(window.scrollY > 60);
+    const handleScroll = () => {
+      setShowNavbarSearch(window.scrollY > 180);
     };
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
@@ -59,21 +53,10 @@ export default function Navbar() {
     };
     searchKey();
   }, [search]);
-  const sendMessage = async (text) => {
-    const res = await fetch("http://localhost:3000/api/discussion/chatbot", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text }),
-    });
-    const data = await res.json();
-    setMessages((prev) => [...prev, { role: "bot", text: data.reply }]);
-    console.log("resecied in fronted: ", data?.reply);
-    setShowMsg(data.reply);
-  };
   return (
     <div className="container-1">
       <nav className="navbar navbar-expand-lg fixed-top bg-dark">
-        <div className="container-fluid">
+        <div className="container-fluid navbar-shell">
           {/* LEFT: LOGO (always visible) */}
           <button
             className="navbar-brand fw-bold text-white bg-dark"
@@ -111,38 +94,30 @@ export default function Navbar() {
             </button>
           </div>
           {/* COLLAPSIBLE CONTENT (hidden on sm/md) */}
-          <div className="d-none d-lg-flex w-100 align-items-center">
+          <div className="d-none d-lg-flex w-100 align-items-center navbar-desktop">
             {/* SEARCH */}
-            <input
-              className="form-control mx-3"
-              placeholder="Search Discussion"
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ maxWidth: "300px" }}
-            />
-            <div className="d-flex">
-              <input
-                placeholder="Ask Question"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-              />
-
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={() => {
-                  sendMessage(question);
-                  setQuestion("");
-                }}
-              >
-                Ask
-              </button>
-            </div>
-            {/* LINKS */}
-            <ul className="navbar-nav me-auto">
-              <li className="nav-item text-white">Notifications</li>
-              <li className="nav-item text-white ms-3">Meeting</li>
-              <li className="nav-item text-white ms-3">Messages</li>
-            </ul>
+            {showNavbarSearch && (
+              <div className="navbar-search-center">
+                <input
+                  className="form-control navbar-search-input"
+                  placeholder="Search Discussion"
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+            )}
+            <div className="ms-auto d-flex align-items-center">
+              {/* LINKS */}
+              <ul className="navbar-nav d-flex flex-row align-items-center me-3">
+                <li className="nav-item text-white">
+                  <i className="bi bi-bell fs-5"></i>
+                </li>
+                <li className="nav-item text-white ms-3">
+                  <i className="bi bi-camera-video fs-5"></i>
+                </li>
+                <li className="nav-item text-white ms-3">
+                  <i className="bi bi-chat-dots fs-5"></i>
+                </li>
+              </ul>
             {/* ACTION BUTTONS */}
             <button
               className="btn btn-warning me-2"
@@ -154,6 +129,7 @@ export default function Navbar() {
             >
               Create Discussion
             </button>
+            </div>
             {isLoggedIn ? (
               <button className="btn btn-dark" onClick={handleLogout}>
                 Logout

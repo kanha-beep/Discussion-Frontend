@@ -19,7 +19,6 @@ export default function HomePage() {
     setChatOpen,
     mobileChatOpen,
     setMobileChatOpen,
-    showMsg,
     navigateFn,
   } = useContext(UserContext);
 
@@ -36,16 +35,20 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [isToken, setIsToken] = useState(true);
   const [chatUsers, setChatUsers] = useState([]);
+  const [receivedRequests, setReceivedRequests] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
   const [messagesByChat, setMessagesByChat] = useState({});
+  const [showHeroSection, setShowHeroSection] = useState(true);
   // const [allDiscussions, setAllDiscussions] = useState([]);
   // const [chatList, setChatList] = useState([]);
-  console.log("active user: ", showMsg);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const remoteStreamRef = useRef(null);
   const pcRef = useRef(null);
+  const contentRef = useRef(null);
+  const isExploringRef = useRef(false);
   // const rtcConfig = {
   //   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
   // };
@@ -66,18 +69,9 @@ export default function HomePage() {
       localVideoRef.current.srcObject = stream;
       await localVideoRef.current.play();
     }
-    // const pc = new RTCPeerConnection(rtcConfig);
-    // pcRef.current = pc;
     const pc = createPeerConnection(
-      // (e) => {
-      //   // if (!remoteVideoRef.current) return;
-
-      //   if (remoteVideoRef.current.srcObject !== e.streams[0]) {
-      //     remoteVideoRef.current.srcObject = e.streams[0];
-      //   }
-      // },
+      
       (e) => {
-        // remoteVideoRef.current = e.streams[0];
         remoteStreamRef.current = e.streams[0];
 
         if (remoteVideoRef.current) {
@@ -213,19 +207,47 @@ export default function HomePage() {
       setLoading(false);
     }
   };
-  //all users of the platform
+  const loadFriendships = async () => {
+    if (!user?._id) {
+      setChatUsers([]);
+      setReceivedRequests([]);
+      setSentRequests([]);
+      return;
+    }
+
+    try {
+      const res = await api.get("/api/discussion/friendships");
+      setChatUsers(res?.data?.friends || []);
+      setReceivedRequests(res?.data?.receivedRequests || []);
+      setSentRequests(res?.data?.sentRequests || []);
+    } catch (e) {
+      console.log("error in getting friendships: ", e?.response?.data);
+    }
+  };
+
   useEffect(() => {
-    const getAllUsers = async () => {
-      try {
-        const res = await api.get("/api/discussion/all-users");
-        setChatUsers(res?.data);
-        // console.log("all users of the platform: ", res?.data);
-      } catch (e) {
-        console.log("error in getting all users: ", e?.response?.data);
-      }
+    if (!user?._id) return;
+    loadFriendships();
+  }, [user?._id]);
+
+  useEffect(() => {
+    if (!user?._id) return;
+    socket.emit("register-user", { userId: user._id });
+  }, [user?._id]);
+
+  useEffect(() => {
+    const handleFriendshipUpdate = () => {
+      loadFriendships();
     };
-    getAllUsers();
-  }, []);
+
+    socket.on("friend-request:received", handleFriendshipUpdate);
+    socket.on("friend-request:accepted", handleFriendshipUpdate);
+
+    return () => {
+      socket.off("friend-request:received", handleFriendshipUpdate);
+      socket.off("friend-request:accepted", handleFriendshipUpdate);
+    };
+  }, [user?._id]);
   //get messages for active user, like open single chat
   useEffect(() => {
     if (!activeUser) return;
@@ -305,6 +327,33 @@ export default function HomePage() {
     }
   };
 
+  const handleSendFriendRequest = async (targetUserId) => {
+    try {
+      await api.post(`/api/discussion/friend-request/${targetUserId}`);
+      await loadFriendships();
+    } catch (e) {
+      console.log("error in sending friend request: ", e?.response?.data);
+    }
+  };
+
+  const handleAcceptFriendRequest = async (targetUserId) => {
+    try {
+      await api.post(`/api/discussion/friend-request/${targetUserId}/accept`);
+      await loadFriendships();
+    } catch (e) {
+      console.log("error in accepting friend request: ", e?.response?.data);
+    }
+  };
+
+  const handleRejectFriendRequest = async (targetUserId) => {
+    try {
+      await api.post(`/api/discussion/friend-request/${targetUserId}/reject`);
+      await loadFriendships();
+    } catch (e) {
+      console.log("error in rejecting friend request: ", e?.response?.data);
+    }
+  };
+
   console.log("chats messages: ", messages);
 
   const activeMessages =
@@ -315,13 +364,51 @@ export default function HomePage() {
   useEffect(() => {
     console.log("JOINING CHAT WITH ID:", activeChatId);
   }, [activeChatId]);
+
+  useEffect(() => {
+    const handleWindowScroll = () => {
+      if (isExploringRef.current) return;
+
+      if (!showHeroSection && window.scrollY <= 10) {
+        setShowHeroSection(true);
+      }
+    };
+
+    window.addEventListener("scroll", handleWindowScroll);
+    return () => window.removeEventListener("scroll", handleWindowScroll);
+  }, [showHeroSection]);
+
+  const handleExploreMore = () => {
+    isExploringRef.current = true;
+    setShowHeroSection(false);
+
+    setTimeout(() => {
+      contentRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
+
+    setTimeout(() => {
+      isExploringRef.current = false;
+    }, 700);
+  };
+
   if (loading) return <Loading loading={loading} />;
   console.log("active message: ", activeMessages);
   return (
     <>
-      <MainPageHeading />
+      <MainPageHeading
+        user={user}
+        onExploreMore={handleExploreMore}
+        isVisible={showHeroSection}
+      />
       {/* main div which will have 3 dives */}
-      <div className="p-0 overflow-x-hidden" style={{ height: "90vh" }}>
+      <div
+        ref={contentRef}
+        className="p-0 overflow-x-hidden"
+        style={{ minHeight: "90vh" }}
+      >
         {isToken ? (
           <>
             <div className="row">
@@ -336,11 +423,11 @@ export default function HomePage() {
               )}
             </div>
             <div
-              className="d-flex justify-content-center gap-[20px]"
+              className="d-flex justify-content-center align-items-start gap-[20px]"
               style={{ height: "45vh" }}
             >
               {/* first div - left profile */}
-              <HomePageLeft user={user} navigate={navigate} showMsg={showMsg} />
+              <HomePageLeft user={user} navigate={navigate} />
               {/* second div - all posts */}
               <HomePageMiddle
                 socket={socket}
@@ -366,9 +453,9 @@ export default function HomePage() {
                 chatOpen={chatOpen}
                 activeUser={activeUser}
                 chatUsers={chatUsers}
+                receivedRequests={receivedRequests}
+                sentRequests={sentRequests}
                 setActiveUser={setActiveUser}
-                socket={socket}
-                activeChatId={activeChatId}
                 activeMessages={activeMessages}
                 user={user}
                 chatMsg={chatMsg}
@@ -377,13 +464,16 @@ export default function HomePage() {
                 setChatOpen={setChatOpen}
                 sideChatOpen={sideChatOpen}
                 setSideChatOpen={setSideChatOpen}
+                onSendFriendRequest={handleSendFriendRequest}
+                onAcceptFriendRequest={handleAcceptFriendRequest}
+                onRejectFriendRequest={handleRejectFriendRequest}
               />
             </div>
           </>
         ) : (
           "Please Log In"
         )}
-        {mobileChatOpen && (
+        {false && mobileChatOpen && (
           <div className="mobile-chat d-lg-none">
             {/* HEADER */}
             <div className="mobile-chat-header">
@@ -428,6 +518,168 @@ export default function HomePage() {
                     <button onClick={handleSubmitChat}>Send</button>
                   </div>
                 </>
+              )}
+            </div>
+          </div>
+        )}
+        {mobileChatOpen && (
+          <div className="fixed inset-0 z-[10000] bg-[linear-gradient(180deg,_#0f172a_0%,_#111827_55%,_#172554_100%)] d-lg-none">
+            <div className="flex h-full flex-col text-white">
+              <div className="flex items-center justify-between border-b border-white/10 px-4 py-4 shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      if (activeUser) {
+                        setActiveUser(null);
+                        return;
+                      }
+                      setMobileChatOpen(false);
+                    }}
+                    className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-lg"
+                  >
+                    <i className="bi bi-arrow-left"></i>
+                  </button>
+                  <div>
+                    <div className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-200">
+                      Messages
+                    </div>
+                    <div className="text-sm text-slate-200">
+                      {activeUser
+                        ? activeUser.email.split("@")[0]
+                        : "Friends and conversations"}
+                    </div>
+                  </div>
+                </div>
+                {!activeUser && (
+                  <button
+                    onClick={() => setMobileChatOpen(false)}
+                    className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-100"
+                  >
+                    Close
+                  </button>
+                )}
+              </div>
+
+              {!activeUser ? (
+                <div className="flex-1 overflow-y-auto px-4 py-4">
+                  <div className="mb-4 rounded-[24px] border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+                    <div className="text-xs font-bold uppercase tracking-[0.16em] text-slate-300">
+                      Chat List
+                    </div>
+                    <div className="mt-2 text-sm text-slate-400">
+                      Open a friend chat from your current connections.
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {chatUsers.length === 0 ? (
+                      <div className="rounded-[24px] border border-dashed border-white/15 bg-white/5 p-5 text-sm text-slate-300">
+                        No chat friends yet.
+                      </div>
+                    ) : (
+                      chatUsers.map((u) => (
+                        <button
+                          key={u._id}
+                          onClick={() => setActiveUser(u)}
+                          className="flex w-full items-center justify-between rounded-[24px] border border-white/10 bg-white/5 px-4 py-4 text-left shadow-[0_14px_28px_rgba(0,0,0,0.15)] transition hover:bg-white/10"
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate text-base font-semibold text-white">
+                              {u.name ||
+                                [u.firstName, u.lastName]
+                                  .filter(Boolean)
+                                  .join(" ") ||
+                                u.email.split("@")[0]}
+                            </div>
+                            <div className="truncate text-sm text-slate-400">
+                              {u.email}
+                            </div>
+                          </div>
+                          <div className="rounded-full bg-cyan-400/15 px-3 py-1 text-xs font-semibold text-cyan-200">
+                            Open
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex min-h-0 flex-1 flex-col">
+                  <div className="border-b border-white/10 px-4 py-3">
+                    <div className="text-base font-semibold text-white">
+                      {activeUser?.name ||
+                        [activeUser?.firstName, activeUser?.lastName]
+                          .filter(Boolean)
+                          .join(" ") ||
+                        activeUser?.email?.split("@")[0]}
+                    </div>
+                    <div className="text-sm text-slate-400">
+                      {activeUser?.email}
+                    </div>
+                  </div>
+
+                  <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+                    {activeMessages.length === 0 ? (
+                      <div className="rounded-[24px] border border-dashed border-white/15 bg-white/5 p-5 text-sm text-slate-300">
+                        No messages yet. Say hello to start the chat.
+                      </div>
+                    ) : (
+                      activeMessages.map((m) => {
+                        const isMine =
+                          String(m.senderId._id) === String(user._id);
+
+                        return (
+                          <div
+                            key={m._id}
+                            className={`flex ${
+                              isMine ? "justify-end" : "justify-start"
+                            }`}
+                          >
+                            <div
+                              className={`max-w-[84%] rounded-[22px] px-4 py-3 shadow-[0_12px_24px_rgba(0,0,0,0.16)] ${
+                                isMine
+                                  ? "bg-cyan-400 text-slate-950"
+                                  : "border border-white/10 bg-white/10 text-white backdrop-blur-xl"
+                              }`}
+                            >
+                              <div
+                                className={`mb-1 text-[11px] font-bold uppercase tracking-[0.14em] ${
+                                  isMine ? "text-slate-800/70" : "text-cyan-200"
+                                }`}
+                              >
+                                {isMine ? "You" : m.senderId.email.split("@")[0]}
+                              </div>
+                              <div className="text-sm leading-6">{m.text}</div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  <div className="border-t border-white/10 bg-slate-950/30 px-4 py-4 backdrop-blur-xl">
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={chatMsg}
+                        onChange={(e) => setChatMsg(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleSubmitChat();
+                          }
+                        }}
+                        placeholder="Type your message..."
+                        className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-cyan-300 focus:bg-white/15"
+                      />
+                      <button
+                        onClick={handleSubmitChat}
+                        className="rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
+                      >
+                        Send
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </div>

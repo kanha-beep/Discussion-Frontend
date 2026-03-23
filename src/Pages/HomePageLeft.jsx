@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function HomePageLeft({ user, navigate, showMsg }) {
+export default function HomePageLeft({ user, navigate }) {
   return (
     <div>
       <div className="right-side d-none d-lg-block sm:bg-green-50 bg-transparent md:bg-green-100 lg:bg-green-100 lg:ml-[3rem] lg:w-[18rem] md:w-[13rem] md:ml-[1rem] sm:w-[14rem]">
@@ -21,12 +21,14 @@ export default function HomePageLeft({ user, navigate, showMsg }) {
             onClick={() => navigate(`/profile/${user?._id}`)}
             className="profile"
           >
+            Mailbox
+          </button>
+          <button
+            onClick={() => navigate(`/profile/${user?._id}`)}
+            className="profile"
+          >
             <span className="profile-1">View profile</span>
           </button>
-          <div className="bg-yellow-100/10 p-2 border shadow-2xl relative top-[8rem] right-[1rem] w-[18rem] h-[10rem] rounded-lg">
-            Message from Chatbot:
-            <div className="">{showMsg}</div>
-          </div>
         </ul>
       </div>
     </div>

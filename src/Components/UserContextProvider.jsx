@@ -4,6 +4,10 @@ export const UserContextProvider = ({ children }) => {
   const [navigateFn, setNavigateFn] = useState(null);
   const [showMsg, setShowMsg] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
+  const [chatbotMessages, setChatbotMessages] = useState([
+    { role: "bot", text: "Hello! How can I help you today?" },
+  ]);
   const [filterDiscussion, setFilterDiscussion] = useState([]);
   const [userRoles, setUserRoles] = useState("");
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
@@ -33,6 +37,10 @@ export const UserContextProvider = ({ children }) => {
         setShowMsg,
         chatOpen,
         setChatOpen,
+        chatbotOpen,
+        setChatbotOpen,
+        chatbotMessages,
+        setChatbotMessages,
         filterDiscussion,
         setFilterDiscussion,
         userRoles,
