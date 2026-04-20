@@ -8,6 +8,7 @@ import ChatOpen from "./ChatOpen.jsx";
 import { UserContext } from "../Components/UserContext.js";
 import ChatBotButton from "../Buttons/ChatBotButton.jsx";
 import OpenChatbotButton from "../Buttons/OpenChatbotButton.jsx";
+import TestHubWidget from "../Components/TestHubWidget.jsx";
 export default function HomePageRight({
   chatOpen,
   activeUser,
@@ -64,6 +65,7 @@ export default function HomePageRight({
       <div className="right-side self-start w-full d-none d-lg-block bg-white sm:w-full md:w-[14rem] md:mr-[2rem] md:bg-green-500 lg:w-[22rem] lg:mr-[4rem] lg:bg-green-100">
         {/* advt */}
         <Advertisement />
+        <TestHubWidget />
         <ChatOpen
           chatOpen={chatOpen}
           activeUser={activeUser}

@@ -9,8 +9,7 @@ export default function Advertisement() {
     const getNews = async () => {
       try {
         const res = await api.get("/api/discussion/news");
-        // console.log("NEWS: ", res?.data);
-        setNewsList(res?.data || []);
+        setNewsList(res?.data?.items || []);
       } catch (err) {
         console.log(
           "error fetching news: ",

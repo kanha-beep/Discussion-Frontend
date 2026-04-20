@@ -13,6 +13,8 @@ import WhiteBoard from "./Pages/WhiteBoard.jsx";
 import WhiteBoard3D from "./Pages/WhiteBoard3D.jsx";
 import VideoCall from "./Pages/VideoCall.jsx";
 import PrivateRoom from "./Pages/PrivateRoom.jsx";
+import RoomFeedback from "./Pages/RoomFeedback.jsx";
+import TestPage from "./Pages/TestPage.jsx";
 function App() {
   const {
     showMsg,
@@ -73,6 +75,8 @@ function App() {
         <Route path="/profile/:profileId" element={<ProfilePage />} />
         <Route path="/call/:activeUserId" element={<VideoCall />} />
         <Route path="/room/:roomId" element={<PrivateRoom />} />
+        <Route path="/discussion/:discussionId/feedback" element={<RoomFeedback />} />
+        <Route path="/tests" element={<TestPage />} />
 
         <Route
           path="/*"

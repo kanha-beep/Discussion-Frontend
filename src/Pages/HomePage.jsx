@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { api, socket } from "../../api.js";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Loading } from "../Components/Loading.jsx";
 import { MainPageHeading } from "../Pages/MainPageHeading.jsx";
 import { Hand, TruckElectricIcon } from "lucide-react";
@@ -26,7 +26,7 @@ export default function HomePage() {
   const [sideChatOpen, setSideChatOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
-  // const location = useLocation();
+  const location = useLocation();
   const [chatMsg, setChatMsg] = useState("");
   const [showVideo, setShowVideo] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -169,27 +169,33 @@ export default function HomePage() {
     setShowVideo(false);
   };
 
-  //get discussion
+  const getAllDiscussions = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/api/discussion");
+      setFilterDiscussion(res?.data?.discussions || []);
+      console.log("all discussions: ", res?.data?.discussions);
+      setIsToken(true);
+    } catch (e) {
+      if (e?.response?.status === 400) setIsToken(true);
+      console.log(
+        "error in getting all classes: ",
+        e?.response?.data?.message,
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const getAllDiscussions = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get("/api/discussion");
-        setFilterDiscussion(res?.data?.discussions || []);
-        console.log("all discussions: ", res?.data?.discussions);
-        setLoading(false);
-        setIsToken(true);
-      } catch (e) {
-        if (e?.response?.status === 400) setIsToken(true);
-        console.log(
-          "error in getting all classes: ",
-          e?.response?.data?.message,
-        );
-        setLoading(false);
-      }
-    };
     getAllDiscussions();
   }, []);
+
+  useEffect(() => {
+    if (!location.state?.refresh) return;
+    getAllDiscussions();
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state, location.pathname, navigate]);
   const handleDeleteDiscussion = async (i) => {
     try {
       console.log("delete: ", i);

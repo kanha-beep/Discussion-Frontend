@@ -24,6 +24,12 @@ export default function HomePageLeft({ user, navigate }) {
             Mailbox
           </button>
           <button
+            onClick={() => navigate(`/profile/${user?._id}?tab=tests`)}
+            className="profile"
+          >
+            Tests
+          </button>
+          <button
             onClick={() => navigate(`/profile/${user?._id}`)}
             className="profile"
           >

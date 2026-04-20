@@ -4,6 +4,7 @@ import { api, socket } from "../../api";
 import { createPeerConnection } from "../Components/Pc";
 import { UserContext } from "../Components/UserContext.js";
 import WhiteBoard from "../Pages/WhiteBoard.jsx";
+import RoomShareModal from "../Components/RoomShareModal.jsx";
 
 const tabBaseClass =
   "rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-200";
@@ -23,12 +24,32 @@ export default function PrivateRoom() {
   const localVideoRef = useRef(null);
   const peersRef = useRef({});
   const localStreamRef = useRef(null);
+  const recorderStreamRef = useRef(null);
+  const userMicEnabledRef = useRef(true);
+  const hasRequestedAdmissionRef = useRef(false);
+  const hasJoinedSocketRoomRef = useRef(false);
+  const hasExitedRoomRef = useRef(false);
+  const isRoomClosingRef = useRef(false);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const voiceAnimationFrameRef = useRef(null);
+  const chunkSpeechDetectedRef = useRef(false);
   const audioQueueRef = useRef([]);
   const isPlayingAudioRef = useRef(false);
   const pendingAudioRef = useRef(null);
   const pendingSpeechRef = useRef(null);
+  const activePlaybackBotRef = useRef(null);
+  const mutedBotsRef = useRef({
+    "bot.moderator": false,
+    "bot.assistant": false,
+    all: false,
+  });
   const botSpeakerTimeoutRef = useRef(null);
   const speechVoicesRef = useRef([]);
+  const recordResumeAtRef = useRef(0);
+  const mediaRecorderRef = useRef(null);
+  const userInterruptingRef = useRef(false);
+  const loudSpeechFramesRef = useRef(0);
 
   const getFallbackVoice = (botId) => {
     const availableVoices = speechVoicesRef.current || [];
@@ -48,6 +69,11 @@ export default function PrivateRoom() {
 
   const speakBotFallback = (bot, message, onDone) => {
     if (!message || !window.speechSynthesis) return;
+    const activeMuteState = mutedBotsRef.current || {};
+    if (activeMuteState.all || activeMuteState[bot]) {
+      onDone?.();
+      return;
+    }
 
     const spokenMessage = String(message)
       .replace(/^Krishna:\s*/i, "")
@@ -64,13 +90,16 @@ export default function PrivateRoom() {
     }
     utterance.onend = () => {
       pendingSpeechRef.current = null;
+      activePlaybackBotRef.current = null;
       onDone?.();
     };
     utterance.onerror = () => {
       pendingSpeechRef.current = null;
+      activePlaybackBotRef.current = null;
       onDone?.();
     };
     pendingSpeechRef.current = utterance;
+    activePlaybackBotRef.current = bot;
     window.speechSynthesis.speak(utterance);
   };
 
@@ -80,12 +109,38 @@ export default function PrivateRoom() {
   const [text, setText] = useState("");
   const [activeTab, setActiveTab] = useState("video");
   const [waitingUsers, setWaitingUsers] = useState([]);
+  const [roomRefreshVersion, setRoomRefreshVersion] = useState(0);
+  const [roomRefreshLoading, setRoomRefreshLoading] = useState(false);
   const [isHost, setIsHost] = useState(false);
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
   const [activeBotSpeaker, setActiveBotSpeaker] = useState(null);
   const [roomMeta, setRoomMeta] = useState(null);
   const [privacyLoading, setPrivacyLoading] = useState(false);
+  const [transcriptSearch, setTranscriptSearch] = useState("");
+  const [transcriptSearchLoading, setTranscriptSearchLoading] = useState(false);
+  const [transcriptSearchResult, setTranscriptSearchResult] = useState(null);
+  const [voiceLevel, setVoiceLevel] = useState(0);
+  const [botDispatchState, setBotDispatchState] = useState({
+    active: false,
+    text: "",
+    startedAt: null,
+  });
+  const [botDispatchSeconds, setBotDispatchSeconds] = useState(0);
+  const [mutedBots, setMutedBots] = useState({
+    "bot.moderator": false,
+    "bot.assistant": false,
+    all: false,
+  });
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const chatbotBaseUrl =
+    import.meta.env.VITE_CHATBOT_URL || "http://127.0.0.1:8000";
+  const shareRoomUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/room/${roomId}`
+      : "";
+  const isShareHost =
+    String(roomMeta?.host?._id || roomMeta?.host || "") === String(user?._id || "");
   const isRoomOwner =
     String(roomMeta?.host?._id || roomMeta?.host || "") === String(user?._id || "") ||
     String(roomMeta?.discussion?.owner?._id || roomMeta?.discussion?.owner || "") ===
@@ -136,6 +191,176 @@ export default function PrivateRoom() {
     }, 3200);
   };
 
+  const clearBotDispatchState = () => {
+    setBotDispatchState({ active: false, text: "", startedAt: null });
+    setBotDispatchSeconds(0);
+  };
+
+  const stopBotPlayback = ({ resumeDelayMs = 600 } = {}) => {
+    pendingAudioRef.current?.pause?.();
+    pendingAudioRef.current = null;
+    pendingSpeechRef.current = null;
+    audioQueueRef.current = [];
+    isPlayingAudioRef.current = false;
+    activePlaybackBotRef.current = null;
+    setActiveBotSpeaker(null);
+    loudSpeechFramesRef.current = 0;
+    recordResumeAtRef.current = Date.now() + resumeDelayMs;
+    window.speechSynthesis?.cancel();
+  };
+
+  const showBotDispatchState = (message) => {
+    setBotDispatchState({
+      active: true,
+      text: message,
+      startedAt: Date.now(),
+    });
+  };
+
+  useEffect(() => {
+    if (!botDispatchState.active || !botDispatchState.startedAt) {
+      setBotDispatchSeconds(0);
+      return;
+    }
+
+    const updateElapsed = () => {
+      setBotDispatchSeconds(
+        Math.max(
+          0,
+          Math.floor((Date.now() - botDispatchState.startedAt) / 1000),
+        ),
+      );
+    };
+
+    updateElapsed();
+    const intervalId = window.setInterval(updateElapsed, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [botDispatchState.active, botDispatchState.startedAt]);
+
+  const toggleBotMute = (botId) => {
+    setMutedBots((prev) => {
+      const next = {
+        ...prev,
+        [botId]: !prev[botId],
+      };
+      mutedBotsRef.current = next;
+
+      if ((botId === "all" && next.all) || (next[botId] && activePlaybackBotRef.current === botId)) {
+        pendingAudioRef.current?.pause?.();
+        pendingAudioRef.current = null;
+        pendingSpeechRef.current = null;
+        window.speechSynthesis?.cancel();
+        isPlayingAudioRef.current = false;
+        activePlaybackBotRef.current = null;
+        setActiveBotSpeaker(null);
+        loudSpeechFramesRef.current = 0;
+      }
+
+      socket.emit("set-bot-mute", {
+        botId,
+        muted: next[botId],
+      });
+
+      return next;
+    });
+  };
+
+  const areAllBotsMuted = mutedBots.all;
+
+  const startVoiceMeter = (stream) => {
+    if (!stream) return;
+
+    if (voiceAnimationFrameRef.current) {
+      cancelAnimationFrame(voiceAnimationFrameRef.current);
+      voiceAnimationFrameRef.current = null;
+    }
+
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    try {
+      if (audioContextRef.current?.state === "closed") {
+        audioContextRef.current = null;
+      }
+
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContextClass();
+      }
+
+      const analyser = audioContextRef.current.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.82;
+
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      source.connect(analyser);
+      analyserRef.current = analyser;
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      const tick = () => {
+        if (!analyserRef.current) return;
+        analyserRef.current.getByteFrequencyData(dataArray);
+        const average =
+          dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length;
+        const normalized = Math.min(100, Math.round((average / 160) * 100));
+
+        if (normalized > 10) {
+          chunkSpeechDetectedRef.current = true;
+        }
+
+        const botIsTalking =
+          isPlayingAudioRef.current ||
+          !!activePlaybackBotRef.current ||
+          audioQueueRef.current.length > 0;
+
+        if (botIsTalking && normalized >= 28) {
+          loudSpeechFramesRef.current += 1;
+        } else {
+          loudSpeechFramesRef.current = 0;
+        }
+
+        if (
+          botIsTalking &&
+          loudSpeechFramesRef.current >= 6 &&
+          !userInterruptingRef.current
+        ) {
+          userInterruptingRef.current = true;
+          loudSpeechFramesRef.current = 0;
+          showBotDispatchState(
+            `Listening to your interruption, ${
+              user?.firstName || user?.email?.split("@")[0] || "User"
+            }...`,
+          );
+          stopBotPlayback({ resumeDelayMs: 0 });
+
+          if (mediaRecorderRef.current?.state === "recording") {
+            mediaRecorderRef.current.stop();
+            return;
+          }
+        }
+
+        setVoiceLevel(normalized);
+        voiceAnimationFrameRef.current = requestAnimationFrame(tick);
+      };
+
+      tick();
+    } catch (error) {
+      console.log("error starting voice meter:", error);
+    }
+  };
+
+  const stopVoiceMeter = () => {
+    if (voiceAnimationFrameRef.current) {
+      cancelAnimationFrame(voiceAnimationFrameRef.current);
+      voiceAnimationFrameRef.current = null;
+    }
+    analyserRef.current = null;
+    setVoiceLevel(0);
+  };
+
   const resolveBotSpeaker = (payload) => {
     const directBot = payload?.bot;
     if (directBot === "bot.moderator" || directBot === "bot.assistant") {
@@ -168,6 +393,18 @@ export default function PrivateRoom() {
     return null;
   };
 
+  const getSenderName = (sender) => {
+    if (!sender) return "User";
+    if (sender.name) return sender.name;
+
+    const fullName = [sender.firstName, sender.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    return fullName || sender.email?.split("@")[0] || "User";
+  };
+
   useEffect(() => {
     socket.on("room-message", (msg) => setChat((prev) => [...prev, msg]));
     return () => socket.off("room-message");
@@ -177,6 +414,7 @@ export default function PrivateRoom() {
     if (!text.trim()) return;
     const messageText = text.trim();
     const senderName = user?.email?.split("@")[0] || "User";
+    stopBotPlayback();
     socket.emit("room-message", {
       roomId,
       text: messageText,
@@ -186,23 +424,22 @@ export default function PrivateRoom() {
       },
     });
     setText("");
+    showBotDispatchState(`Sending your message to Krishna and Ram to discuss, ${senderName}...`);
 
-    fetch("http://localhost:8000/podcast/interrupt", {
+    fetch(`${chatbotBaseUrl}/podcast/interrupt`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         room_id: roomId,
         text: messageText,
         user_name: senderName,
+        topic: roomMeta?.discussion?.keywords || [],
       }),
-    }).catch((error) => {
-      console.log("error sending text interruption to bots:", error);
-    });
-  };
-
-  const speak = (value) => {
-    const utterance = new SpeechSynthesisUtterance(value);
-    speechSynthesis.speak(utterance);
+    })
+      .catch((error) => {
+        console.log("error sending text interruption to bots:", error);
+        clearBotDispatchState();
+      });
   };
 
   const loadRoomMeta = async () => {
@@ -211,6 +448,34 @@ export default function PrivateRoom() {
       setRoomMeta(res?.data || null);
     } catch (error) {
       console.log("error loading room meta:", error?.response?.data || error);
+    }
+  };
+
+  const loadRoomMessages = async () => {
+    try {
+      const res = await api.get(`/api/discussion/room/${roomId}/messages`);
+      setChat(Array.isArray(res?.data) ? res.data : []);
+    } catch (error) {
+      if (error?.response?.status === 403) {
+        setChat([]);
+        return;
+      }
+      console.log("error loading room messages:", error?.response?.data || error);
+    }
+  };
+
+  const ensurePodcastRunning = async (keywords = []) => {
+    try {
+      await fetch(`${chatbotBaseUrl}/podcast/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          room_id: roomId,
+          topic: keywords,
+        }),
+      });
+    } catch (error) {
+      console.log("error ensuring podcast start:", error);
     }
   };
 
@@ -227,35 +492,92 @@ export default function PrivateRoom() {
     }
   };
 
+  const refreshPrivateRoomView = async () => {
+    try {
+      setRoomRefreshLoading(true);
+      hasRequestedAdmissionRef.current = false;
+      hasJoinedSocketRoomRef.current = false;
+      setParticipants([]);
+      setWaitingUsers([]);
+      setActiveBotSpeaker(null);
+      clearBotDispatchState();
+      stopBotPlayback({ resumeDelayMs: 0 });
+      await Promise.all([loadRoomMeta(), loadRoomMessages()]);
+      setRoomRefreshVersion((prev) => prev + 1);
+    } catch (error) {
+      console.log("error refreshing private room view:", error);
+    } finally {
+      setRoomRefreshLoading(false);
+    }
+  };
+
+  const searchDiscussionTranscript = async () => {
+    const query = transcriptSearch.trim();
+    if (!query || !roomMeta?.discussion?._id) return;
+
+    try {
+      setTranscriptSearchLoading(true);
+      const res = await api.post(
+        `/api/discussion/${roomMeta.discussion._id}/search-transcript`,
+        { query },
+      );
+      setTranscriptSearchResult(res?.data || null);
+    } catch (error) {
+      console.log("error searching discussion transcript:", error?.response?.data || error);
+      setTranscriptSearchResult({
+        verified: false,
+        message: error?.response?.data?.msg || "Could not search the discussion transcript right now.",
+        matches: [],
+      });
+    } finally {
+      setTranscriptSearchLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!roomId) return;
     loadRoomMeta();
+    loadRoomMessages();
   }, [roomId]);
 
   useEffect(() => {
-    const join = () => {
-      socket.emit("join-room", { roomId, user: user?._id || "guest" });
-    };
-
-    if (socket.connected) join();
-    socket.on("connect", join);
-    return () => socket.off("connect", join);
-  }, [roomId, user]);
+    if (!roomId || !roomMeta?.discussion?.keywords?.length) return;
+    ensurePodcastRunning(roomMeta.discussion.keywords);
+  }, [roomId, roomMeta?.discussion?.keywords]);
 
   useEffect(() => {
-    if (!roomId || !socket) return;
+    mutedBotsRef.current = mutedBots;
+    Object.entries(mutedBots).forEach(([botId, muted]) => {
+      socket.emit("set-bot-mute", { botId, muted });
+    });
+  }, [mutedBots]);
+
+  useEffect(() => {
+    if (!roomId || !socket || !user?._id) return;
 
     const init = async () => {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
       });
 
       localStreamRef.current = stream;
       setIsMicMuted(!stream.getAudioTracks()[0]?.enabled);
       setIsCameraOff(!stream.getVideoTracks()[0]?.enabled);
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-      socket.emit("join-room-request", { roomId });
+      startVoiceMeter(stream);
+
+      if (!hasRequestedAdmissionRef.current) {
+        hasRequestedAdmissionRef.current = true;
+        socket.emit("join-room-request", {
+          roomId,
+          userId: user._id,
+        });
+      }
     };
 
     init();
@@ -264,35 +586,63 @@ export default function PrivateRoom() {
       setIsHost(true);
     });
 
-    socket.on("room-message", (msg) => {
-      const detectedBot = resolveBotSpeaker(msg);
-      if (detectedBot) {
-        activateBotSpeaker(detectedBot);
-      }
-      speak(msg.text);
-    });
-
     socket.on("waiting-users", (users) => {
       setWaitingUsers(users);
     });
 
     socket.on("admitted", () => {
-      socket.emit("join-room", { roomId });
+      if (hasJoinedSocketRoomRef.current) return;
+      hasJoinedSocketRoomRef.current = true;
+      socket.emit("join-room", { roomId, user: user._id });
+      window.setTimeout(() => {
+        loadRoomMeta();
+        loadRoomMessages();
+      }, 350);
     });
 
     socket.on("rejected", () => {
+      hasExitedRoomRef.current = true;
       alert("Host rejected");
       navigate("/");
     });
 
     socket.on("room-full", ({ message }) => {
+      hasExitedRoomRef.current = true;
       alert(message || "Private room is full. Maximum 4 participants allowed.");
       navigate("/", { replace: true });
     });
 
     socket.on("kicked", () => {
+      hasExitedRoomRef.current = true;
       alert("You were kicked");
       navigate("/");
+    });
+
+    socket.on("room-closed", (payload = {}) => {
+      hasExitedRoomRef.current = true;
+      isRoomClosingRef.current = true;
+      window.speechSynthesis?.cancel();
+      pendingAudioRef.current?.pause?.();
+      pendingAudioRef.current = null;
+      pendingSpeechRef.current = null;
+      audioQueueRef.current = [];
+      isPlayingAudioRef.current = false;
+
+      localStreamRef.current?.getTracks()?.forEach((track) => track.stop());
+      localStreamRef.current = null;
+
+      Object.values(peersRef.current).forEach((pc) => pc.close());
+      Object.keys(peersRef.current).forEach((key) => delete peersRef.current[key]);
+      setParticipants([]);
+
+      navigate(payload.feedbackPath || `/discussion/${payload.discussionId}/feedback`, {
+        replace: true,
+        state: {
+          roomClosed: true,
+          discussionId: payload.discussionId,
+          roomId,
+        },
+      });
     });
 
     socket.on("user-joined", ({ socketId }) => {
@@ -328,31 +678,54 @@ export default function PrivateRoom() {
       const url = nextItem?.audio_url;
       const bot = nextItem?.bot;
       const message = nextItem?.text;
+      const activeMuteState = mutedBotsRef.current || {};
+      recordResumeAtRef.current = Date.now() + 1200;
 
       if (!url) {
         isPlayingAudioRef.current = true;
+        activePlaybackBotRef.current = bot;
+        setActiveBotSpeaker(bot);
         speakBotFallback(bot, message, () => {
           isPlayingAudioRef.current = false;
+          activePlaybackBotRef.current = null;
+          setActiveBotSpeaker(null);
           playNextAudio();
         });
         return;
       }
 
       const audio = new Audio(url);
+      if (activeMuteState.all || activeMuteState[bot]) {
+        isPlayingAudioRef.current = false;
+        pendingAudioRef.current = null;
+        activePlaybackBotRef.current = null;
+        recordResumeAtRef.current = Date.now() + 400;
+        playNextAudio();
+        return;
+      }
       pendingAudioRef.current = audio;
       isPlayingAudioRef.current = true;
+      activePlaybackBotRef.current = bot;
+      setActiveBotSpeaker(bot);
 
       audio.onended = () => {
         isPlayingAudioRef.current = false;
         pendingAudioRef.current = null;
+        activePlaybackBotRef.current = null;
+        setActiveBotSpeaker(null);
+        recordResumeAtRef.current = Date.now() + 400;
         playNextAudio();
       };
 
       audio.onerror = (event) => {
         console.log("bot audio failed to load:", url, event);
         pendingAudioRef.current = null;
+        activePlaybackBotRef.current = null;
+        setActiveBotSpeaker(null);
         speakBotFallback(bot, message, () => {
           isPlayingAudioRef.current = false;
+          activePlaybackBotRef.current = null;
+          setActiveBotSpeaker(null);
           playNextAudio();
         });
       };
@@ -360,8 +733,12 @@ export default function PrivateRoom() {
       audio.play().catch((error) => {
         console.log("bot audio autoplay blocked:", error);
         pendingAudioRef.current = null;
+        activePlaybackBotRef.current = null;
+        setActiveBotSpeaker(null);
         speakBotFallback(bot, message, () => {
           isPlayingAudioRef.current = false;
+          activePlaybackBotRef.current = null;
+          setActiveBotSpeaker(null);
           playNextAudio();
         });
       });
@@ -379,8 +756,9 @@ export default function PrivateRoom() {
     };
 
     socket.on("bot-voice", (data) => {
+      if (data?.bot === "bot.summary") return;
       if (!data?.text && !data?.audio_url) return;
-      activateBotSpeaker(resolveBotSpeaker(data) || data?.bot || null);
+      clearBotDispatchState();
       audioQueueRef.current.push(data);
       if (!isPlayingAudioRef.current) {
         playNextAudio();
@@ -403,16 +781,23 @@ export default function PrivateRoom() {
       socket.off("host");
       socket.off("waiting-users");
       socket.off("bot-voice");
+      socket.off("room-closed");
       if (botSpeakerTimeoutRef.current) {
         window.clearTimeout(botSpeakerTimeoutRef.current);
         botSpeakerTimeoutRef.current = null;
       }
+      stopVoiceMeter();
+      stopBotPlayback();
       window.removeEventListener("click", unlockPendingAudio);
       window.removeEventListener("keydown", unlockPendingAudio);
-      socket.emit("leave-room", { roomId });
+      if (!hasExitedRoomRef.current && hasJoinedSocketRoomRef.current) {
+        socket.emit("leave-room", { roomId });
+      }
+      hasRequestedAdmissionRef.current = false;
+      hasJoinedSocketRoomRef.current = false;
       Object.values(peersRef.current).forEach((pc) => pc.close());
     };
-  }, []);
+  }, [navigate, roomId, roomRefreshVersion, user?._id]);
 
   const createPeer = (remoteId, isAnswerer = false) => {
     const pc = createPeerConnection(
@@ -444,13 +829,22 @@ export default function PrivateRoom() {
     );
   };
 
+  const applyMicEnabledState = (enabled) => {
+    userMicEnabledRef.current = enabled;
+
+    localStreamRef.current?.getAudioTracks()?.forEach((track) => {
+      track.enabled = enabled;
+    });
+
+    recorderStreamRef.current?.getAudioTracks()?.forEach((track) => {
+      track.enabled = enabled;
+    });
+
+    setIsMicMuted(!enabled);
+  };
+
   const toggleAudio = () => {
-    localStreamRef.current
-      ?.getAudioTracks()
-      .forEach((t) => {
-        t.enabled = !t.enabled;
-        setIsMicMuted(!t.enabled);
-      });
+    applyMicEnabledState(!userMicEnabledRef.current);
   };
 
   const toggleVideo = () => {
@@ -463,7 +857,10 @@ export default function PrivateRoom() {
   };
 
   const endCall = () => {
-    fetch("http://localhost:8000/podcast/stop", {
+    hasExitedRoomRef.current = true;
+    isRoomClosingRef.current = true;
+    stopBotPlayback();
+    fetch(`${chatbotBaseUrl}/podcast/stop`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ room_id: roomId }),
@@ -477,12 +874,22 @@ export default function PrivateRoom() {
     pendingSpeechRef.current = null;
     audioQueueRef.current = [];
     isPlayingAudioRef.current = false;
+    activePlaybackBotRef.current = null;
+    clearBotDispatchState();
+    stopVoiceMeter();
 
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => {
         track.stop();
       });
       localStreamRef.current = null;
+    }
+
+    if (recorderStreamRef.current) {
+      recorderStreamRef.current.getTracks().forEach((track) => {
+        track.stop();
+      });
+      recorderStreamRef.current = null;
     }
 
     if (localVideoRef.current) {
@@ -497,6 +904,7 @@ export default function PrivateRoom() {
     Object.keys(peersRef.current).forEach((k) => delete peersRef.current[k]);
 
     socket.emit("leave-room", { roomId });
+    hasJoinedSocketRoomRef.current = false;
 
     setParticipants([]);
     setActiveTab("chat");
@@ -504,9 +912,33 @@ export default function PrivateRoom() {
     navigate("/", { replace: true });
   };
 
+  const closeRoomForEveryone = async () => {
+    try {
+      isRoomClosingRef.current = true;
+      const notes =
+        brief ||
+        lastSummary ||
+        roomMeta?.discussion?.summary ||
+        "Discussion notes are being prepared by the system.";
+
+      await api.post(`/api/discussion/room/${roomId}/close`, {
+        notes,
+        imageUrls: [],
+      });
+    } catch (error) {
+      isRoomClosingRef.current = false;
+      console.log("error closing room:", error?.response?.data || error);
+      alert(error?.response?.data?.msg || "Unable to close room right now.");
+    }
+  };
+
   useEffect(() => {
     return () => {
+      isRoomClosingRef.current = true;
+      stopVoiceMeter();
+      audioContextRef.current?.close?.().catch?.(() => {});
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
+      recorderStreamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, []);
 
@@ -527,9 +959,11 @@ export default function PrivateRoom() {
       if (stopped) return;
 
       let chunks = [];
+      chunkSpeechDetectedRef.current = false;
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: "audio/webm;codecs=opus",
       });
+      mediaRecorderRef.current = mediaRecorder;
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) chunks.push(event.data);
@@ -537,6 +971,41 @@ export default function PrivateRoom() {
 
       mediaRecorder.onstop = async () => {
         try {
+          if (mediaRecorderRef.current === mediaRecorder) {
+            mediaRecorderRef.current = null;
+          }
+
+          if (stopped || isRoomClosingRef.current) {
+            return;
+          }
+
+          const isUserInterrupting = userInterruptingRef.current;
+          const shouldIgnoreChunk =
+            !isUserInterrupting &&
+            (isPlayingAudioRef.current ||
+              !!activePlaybackBotRef.current ||
+              Date.now() < recordResumeAtRef.current);
+
+          if (shouldIgnoreChunk) {
+            userInterruptingRef.current = false;
+            clearBotDispatchState();
+            return;
+          }
+
+          if (!chunkSpeechDetectedRef.current) {
+            userInterruptingRef.current = false;
+            clearBotDispatchState();
+            return;
+          }
+
+          showBotDispatchState(
+            `Sending your message to Krishna and Ram to discuss, ${
+              user?.firstName || user?.email?.split("@")[0] || "User"
+            }...`,
+          );
+
+          stopBotPlayback();
+
           const blob = new Blob(chunks, { type: "audio/webm" });
 
           const res = await fetch(
@@ -546,6 +1015,8 @@ export default function PrivateRoom() {
               headers: {
                 "Content-Type": "application/octet-stream",
                 "x-room-id": roomId,
+                "x-user-name":
+                  user?.firstName || user?.email?.split("@")[0] || "User",
               },
               body: blob,
             },
@@ -553,29 +1024,24 @@ export default function PrivateRoom() {
 
           const data = await res.json();
 
+          if (data?.roomClosed || isRoomClosingRef.current) {
+            clearBotDispatchState();
+            return;
+          }
+
           if (data?.brief) {
             setBrief(data.brief);
             localStorage.setItem("brief", data.brief);
           }
 
-          const audio = new Audio("http://127.0.0.1:8000" + data.audio_url);
-          document.addEventListener(
-            "click",
-            () => {
-              audio.play();
-            },
-            { once: true },
-          );
-
           setErrorMsg(data.msg || "");
-          setMessages((prev) => {
-            const filtered = prev.filter((msg) => msg.bot !== "bot.summary");
-            return [...filtered, { bot: "bot.summary", text: data.reply }];
-          });
         } catch (e) {
           console.log("Upload/whisper error:", e);
+          userInterruptingRef.current = false;
+          clearBotDispatchState();
         } finally {
-          if (!stopped) recordOnce();
+          userInterruptingRef.current = false;
+          if (!stopped && !isRoomClosingRef.current) recordOnce();
         }
       };
 
@@ -587,36 +1053,147 @@ export default function PrivateRoom() {
     };
 
     (async () => {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      recorderStreamRef.current = stream;
+      stream.getAudioTracks().forEach((track) => {
+        track.enabled = userMicEnabledRef.current;
+      });
       recordOnce();
     })();
 
     return () => {
       stopped = true;
-      if (stream) stream.getTracks().forEach((t) => t.stop());
+      if (mediaRecorderRef.current?.state === "recording") {
+        mediaRecorderRef.current.stop();
+      }
+      mediaRecorderRef.current = null;
+      if (stream) {
+        stream.getTracks().forEach((t) => t.stop());
+      }
+      if (recorderStreamRef.current === stream) {
+        recorderStreamRef.current = null;
+      }
     };
-  }, []);
+  }, [roomId, setBrief, user?.email, user?.firstName]);
 
   const lastSummary = messages.findLast((m) => m.bot === "bot.summary")?.text;
-
-  function downloadSummary(summaryText) {
-    if (!summaryText) return;
-
-    const blob = new Blob([summaryText], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "summary.txt";
-    a.click();
-
-    URL.revokeObjectURL(url);
-  }
+  const voiceBars = Array.from({ length: 12 }, (_, index) => {
+    const threshold = (index + 1) * 7;
+    return voiceLevel >= threshold;
+  });
 
   const waitingLabel =
     participants.length === 0 ? "Waiting for others..." : null;
   const roomMessages = chat.filter((m) => m?.text);
   const summaryItems = messages.filter((m) => m?.text);
+  const transcriptSearchPanel = (
+    <div className="rounded-[24px] border border-white/10 bg-slate-950/50 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-base font-semibold text-white">
+          Verify discussion
+        </h2>
+        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300">
+          Live search
+        </span>
+      </div>
+
+      <p className="mb-3 text-sm leading-6 text-slate-300">
+        Check whether a line or idea was actually said during the current discussion, so anyone can verify context before reacting.
+      </p>
+
+      <div className="flex flex-col gap-3">
+        <input
+          className="min-w-0 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white/10"
+          value={transcriptSearch}
+          onChange={(e) => setTranscriptSearch(e.target.value)}
+          placeholder='Example: "Did anyone say AI should compare both sides?"'
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              searchDiscussionTranscript();
+            }
+          }}
+        />
+        <button
+          onClick={searchDiscussionTranscript}
+          disabled={transcriptSearchLoading || !transcriptSearch.trim()}
+          className="rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {transcriptSearchLoading ? "Searching..." : "Verify now"}
+        </button>
+      </div>
+
+      {transcriptSearchResult && (
+        <div className="mt-4 space-y-3">
+          <div
+            className={`rounded-2xl border px-4 py-3 text-sm ${
+              transcriptSearchResult.verified
+                ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-100"
+                : "border-amber-400/20 bg-amber-400/10 text-amber-100"
+            }`}
+          >
+            {transcriptSearchResult.message}
+          </div>
+
+          {Array.isArray(transcriptSearchResult.matches) &&
+            transcriptSearchResult.matches.length > 0 && (
+              <div className="space-y-2">
+                {transcriptSearchResult.matches.slice(0, 4).map((match, index) => (
+                  <div
+                    key={`${match.senderName || "speaker"}-${index}`}
+                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200"
+                  >
+                    <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      {match.senderName || "Participant"}
+                    </div>
+                    <div>{match.text}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+        </div>
+      )}
+    </div>
+  );
+
+  const quickMessagePanel = (
+    <div className="rounded-[24px] border border-white/10 bg-slate-950/50 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-base font-semibold text-white">
+          Message the bots
+        </h2>
+        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300">
+          Text fallback
+        </span>
+      </div>
+
+      <p className="mb-3 text-sm leading-6 text-slate-300">
+        If your audio is not recognized, type here and Krishna and Ram will continue the discussion from your message.
+      </p>
+
+      <div className="flex flex-col gap-3">
+        <textarea
+          className="min-h-[110px] w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white/10"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Type what you want the bots to respond to..."
+        />
+        <button
+          onClick={sendMsg}
+          disabled={!text.trim()}
+          className="rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Send to Krishna and Ram
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_transparent_30%),linear-gradient(180deg,_#020617_0%,_#0f172a_45%,_#111827_100%)] px-4 pb-8 pt-24 text-slate-100 sm:px-6 lg:px-8">
@@ -659,6 +1236,12 @@ export default function PrivateRoom() {
                     {waitingLabel}
                   </span>
                 )}
+                {botDispatchState.active && (
+                  <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-amber-100">
+                    {botDispatchState.text}
+                    {botDispatchSeconds > 0 ? ` (${botDispatchSeconds}s)` : ""}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -682,10 +1265,11 @@ export default function PrivateRoom() {
                 Whiteboard
               </button>
               <button
-                className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-white/10"
-                onClick={() => downloadSummary(lastSummary)}
+                className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={refreshPrivateRoomView}
+                disabled={roomRefreshLoading}
               >
-                Download Summary
+                {roomRefreshLoading ? "Refreshing..." : "Refresh View"}
               </button>
               <button
                 className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
@@ -698,6 +1282,14 @@ export default function PrivateRoom() {
                     ? "Make Public"
                     : "Make Private"}
               </button>
+              {isShareHost && (
+                <button
+                  className="rounded-full border border-cyan-300/30 bg-cyan-400/15 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/25"
+                  onClick={() => setShareModalOpen(true)}
+                >
+                  Share room link
+                </button>
+              )}
             </div>
           </div>
 
@@ -720,17 +1312,31 @@ export default function PrivateRoom() {
                             You
                           </div>
                           <div className="text-xs text-slate-300">
-                            Local preview
+                            {voiceLevel > 8 ? "Speaking live" : "Local preview"}
                           </div>
                         </div>
-                        <span className="rounded-full border border-emerald-400/15 bg-emerald-400/15 px-3 py-1 text-xs font-medium text-emerald-200">
-                          Live
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-7 items-end gap-1 rounded-full border border-cyan-400/20 bg-slate-950/65 px-2 py-1">
+                            {voiceBars.map((isActive, index) => (
+                              <span
+                                key={index}
+                                className={`w-1 rounded-full transition-all duration-100 ${
+                                  isActive ? "bg-cyan-300" : "bg-white/20"
+                                }`}
+                                style={{ height: `${8 + index * 2}px` }}
+                              />
+                            ))}
+                          </div>
+                          <span className="rounded-full border border-emerald-400/15 bg-emerald-400/15 px-3 py-1 text-xs font-medium text-emerald-200">
+                            {voiceLevel > 8 ? `${voiceLevel}%` : "Live"}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
                     {botCards.map((botCard) => {
                       const isSpeaking = activeBotSpeaker === botCard.id;
+                      const isMuted = mutedBots.all || mutedBots[botCard.id];
 
                       return (
                         <div
@@ -757,7 +1363,11 @@ export default function PrivateRoom() {
                                   botCard.badge
                                 }`}
                               >
-                                {isSpeaking ? "Speaking" : "Listening"}
+                                {isMuted
+                                  ? "Muted"
+                                  : isSpeaking
+                                    ? "Speaking"
+                                    : "Listening"}
                               </span>
                             </div>
 
@@ -771,12 +1381,23 @@ export default function PrivateRoom() {
                                   }`}
                                 />
                                 <span className="text-xs font-medium text-slate-200">
-                                  {isSpeaking ? "Live response" : "Waiting for turn"}
+                                  {isMuted
+                                    ? "Audio muted here"
+                                    : isSpeaking
+                                      ? "Live response"
+                                      : "Waiting for turn"}
                                 </span>
                               </div>
-                              <div className="text-3xl font-black uppercase tracking-[0.22em] text-white/10">
-                                AI
-                              </div>
+                              <button
+                                onClick={() => toggleBotMute(botCard.id)}
+                                className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
+                                  isMuted
+                                    ? "border-rose-300/30 bg-rose-500/20 text-rose-100 hover:bg-rose-500/30"
+                                    : "border-white/10 bg-white/10 text-white hover:bg-white/20"
+                                }`}
+                              >
+                                {isMuted ? "Unmute" : "Mute"}
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -823,6 +1444,27 @@ export default function PrivateRoom() {
                     ))}
                   </div>
 
+                  <div className="flex flex-wrap items-center gap-3 rounded-[24px] border border-white/10 bg-slate-950/40 p-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold text-white">
+                        Bot audio controls
+                      </div>
+                      <div className="text-xs text-slate-300">
+                        Mute Krishna, Ram, or both together without stopping the discussion.
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => toggleBotMute("all")}
+                      className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                        areAllBotsMuted
+                          ? "border-rose-300/30 bg-rose-500/20 text-rose-100 hover:bg-rose-500/30"
+                          : "border-white/10 bg-white/10 text-white hover:bg-white/20"
+                      }`}
+                    >
+                      {areAllBotsMuted ? "Unmute Both Bots" : "Mute Both Bots"}
+                    </button>
+                  </div>
+
                   <div className="flex flex-wrap items-center gap-2 rounded-[24px] border border-white/10 bg-slate-950/50 p-3">
                     <button
                       onClick={toggleAudio}
@@ -861,6 +1503,15 @@ export default function PrivateRoom() {
                       <i className="bi bi-telephone-x-fill"></i>
                       Leave room
                     </button>
+                    {isRoomOwner && (
+                      <button
+                        onClick={closeRoomForEveryone}
+                        className="flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-400/15 px-3.5 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/25"
+                      >
+                        <i className="bi bi-door-closed-fill"></i>
+                        Close room
+                      </button>
+                    )}
                   </div>
                 </>
               )}
@@ -903,10 +1554,10 @@ export default function PrivateRoom() {
                               >
                                 <div
                                   className={`mb-1 text-xs font-semibold ${
-                                    isMine ? "text-cyan-200" : "text-slate-500"
+                                  isMine ? "text-cyan-200" : "text-slate-500"
                                   }`}
                                 >
-                                  {isMine ? "You" : message.sender?.name || "User"}
+                                  {isMine ? "You" : getSenderName(message.sender)}
                                 </div>
                                 <div className="text-sm leading-6">
                                   {message.text}
@@ -988,6 +1639,10 @@ export default function PrivateRoom() {
             </div>
 
             <aside className="space-y-4">
+              {quickMessagePanel}
+
+              {transcriptSearchPanel}
+
               <div className="rounded-[24px] border border-white/10 bg-slate-950/50 p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-base font-semibold text-white">
@@ -1027,8 +1682,8 @@ export default function PrivateRoom() {
                     </div>
                     <div className="mt-1 font-medium text-white">
                       {roomMeta?.isPrivate
-                        ? "Private room enabled. Minimum 2, maximum 4 participants"
-                        : "Public room enabled"}
+                        ? "Private room enabled. User plus Krishna and Ram are always present first"
+                        : "Public room enabled. The room starts with you, Krishna, and Ram"}
                     </div>
                   </div>
 
@@ -1104,6 +1759,12 @@ export default function PrivateRoom() {
           </div>
         </section>
       </div>
+      <RoomShareModal
+        open={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        shareUrl={shareRoomUrl}
+        title={`${roomMeta?.discussion?.keywords?.[0] || "Discussion"} video call`}
+      />
     </div>
   );
 }

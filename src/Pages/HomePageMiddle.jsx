@@ -3,6 +3,7 @@ import { api } from "../../api";
 import Draggable from "react-draggable";
 import FloatingVideo from "../Components/FloatingVideo";
 import { UserContext } from "../Components/UserContext.js";
+import RoomShareModal from "../Components/RoomShareModal.jsx";
 export default function HomePageMiddle({
   filterDiscussion,
   navigate,
@@ -39,6 +40,11 @@ export default function HomePageMiddle({
   console.log("show video: ", showVideo);
   const dragRef = useRef(null);
   const [roomCounts, setRoomCounts] = useState({});
+  const [shareRoomState, setShareRoomState] = useState({
+    open: false,
+    url: "",
+    title: "",
+  });
   // useEffect(() => {
   //   const id = setInterval(() => {
   //     console.log("1. Got brief:", brief);
@@ -46,12 +52,13 @@ export default function HomePageMiddle({
   //   return () => clearInterval(id);
   // }, [brief]);
   const createRoom = async (roomId, existingRoomId) => {
-    setRoomLoading(true);
-    console.log("1. create room started: ", roomId, existingRoomId);
     if (existingRoomId) {
       navigate(`/room/${existingRoomId}`);
       return;
     }
+
+    setRoomLoading(true);
+    console.log("1. create room started: ", roomId, existingRoomId);
     try {
       const res = await api.post(`/api/discussion/room/new`, {
         name: "Room",
@@ -129,6 +136,12 @@ export default function HomePageMiddle({
         {filterDiscussion.map((d) => {
           const isOwner = d.owner === user?._id;
           const isAdmin = user?.roles === "admin";
+          const isRoomHost =
+            String(d?.roomId?.host?._id || d?.roomId?.host || "") ===
+            String(user?._id || "");
+          const shareUrl = d?.roomId?._id
+            ? `${window.location.origin}/room/${d.roomId._id}`
+            : "";
           const primaryTopic = d?.keywords?.[0] || "Discussion";
           return (
             <div
@@ -218,6 +231,20 @@ export default function HomePageMiddle({
                   >
                     {d.roomId?._id ? "Join" : "Create"}
                   </button>
+                  {isRoomHost && shareUrl && (
+                    <button
+                      onClick={() =>
+                        setShareRoomState({
+                          open: true,
+                          url: shareUrl,
+                          title: `${primaryTopic} video call`,
+                        })
+                      }
+                      className="min-h-[42px] rounded-[14px] border border-cyan-200 bg-cyan-50 px-4 text-sm font-bold text-cyan-900 transition hover:bg-cyan-100"
+                    >
+                      <i className="bi bi-share-fill"></i> Share
+                    </button>
+                  )}
                   {(isOwner || isAdmin) && (
                     <>
                       <button
@@ -246,6 +273,17 @@ export default function HomePageMiddle({
           );
         })}
       </div>
+      <RoomShareModal
+        open={shareRoomState.open}
+        onClose={() =>
+          setShareRoomState((prev) => ({
+            ...prev,
+            open: false,
+          }))
+        }
+        shareUrl={shareRoomState.url}
+        title={shareRoomState.title}
+      />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { handleChange } from "../Components/HandleChange.js";
 import { UserContext } from "../Components/UserContext.js";
 
 export default function DiscussionForm() {
-  const { user } = useContext(UserContext);
+  const { user, setFilterDiscussion } = useContext(UserContext);
   const navigate = useNavigate();
   const [disForm, setDisForm] = useState({
     email: user?.email || "",
@@ -34,6 +34,15 @@ export default function DiscussionForm() {
     try {
       const response = await api.post("/api/discussion/new", disForm);
       console.log("response: ", response?.data);
+      if (response?.data?.discussion) {
+        setFilterDiscussion((prev) => [
+          {
+            ...response.data.discussion,
+            roomId: response?.data?.room || response.data.discussion.roomId || null,
+          },
+          ...prev.filter((item) => item._id !== response.data.discussion._id),
+        ]);
+      }
       navigate("/", { state: { refresh: true } });
     } catch (error) {
       console.log("error: ", error?.response?.data?.message);
@@ -73,6 +82,9 @@ export default function DiscussionForm() {
               <div className="card-body p-4 p-sm-5">
                 <div className="text-center mb-4">
                   <h2 className="fw-bold text-dark mb-2">Create Discussion</h2>
+                  <p className="text-muted mb-0">
+                    Every room starts with you, Krishna, and Ram discussing the topic together.
+                  </p>
                 </div>
 
                 <form onSubmit={handleSubmit}>
