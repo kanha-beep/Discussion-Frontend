@@ -145,7 +145,7 @@ export default function HomePageMiddle({
           const primaryTopic = d?.keywords?.[0] || "Discussion";
           return (
             <div
-              className="mx-2 my-4 rounded-[24px] border border-slate-200/80 bg-gradient-to-b from-white to-slate-50 p-4 shadow-[0_20px_45px_rgba(15,23,42,0.10)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_50px_rgba(15,23,42,0.14)] sm:mx-4 sm:my-5 sm:p-5"
+              className="mx-2 my-4 w-auto min-w-0 max-w-full overflow-hidden rounded-[24px] border border-slate-200/80 bg-gradient-to-b from-white to-slate-50 p-4 shadow-[0_20px_45px_rgba(15,23,42,0.10)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_50px_rgba(15,23,42,0.14)] sm:mx-4 sm:my-5 sm:p-5"
               key={d?._id}
             >
               {/* header */}
@@ -156,17 +156,17 @@ export default function HomePageMiddle({
                   className="h-12 w-12 rounded-full border border-slate-200 object-cover"
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="mb-2 text-[22px] font-extrabold capitalize leading-tight text-slate-900">
+                  <div className="mb-2 break-words text-[22px] font-extrabold capitalize leading-tight text-slate-900">
                     {primaryTopic}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
+                    <span className="inline-flex max-w-full items-center break-all rounded-full bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
                       {d.keywords.join(", ")}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-start gap-2 sm:ml-auto sm:flex-col sm:items-end">
+                <div className="min-w-0 flex flex-wrap items-start gap-2 sm:ml-auto sm:flex-col sm:items-end">
                   {d.roomId?.isPrivate ? (
                     <span className="inline-flex items-center rounded-full bg-slate-900 px-3 py-2 text-xs font-semibold text-white">
                       Private Room
@@ -189,7 +189,7 @@ export default function HomePageMiddle({
                 <div>
                   <div className="rounded-[20px] border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-4">
                     <pre
-                      className="m-0 whitespace-pre-wrap text-sm leading-6 text-slate-600"
+                      className="m-0 whitespace-pre-wrap break-words text-sm leading-6 text-slate-600"
                       style={{ margin: 0 }}
                     >
                       {d?.summary?.trim()
@@ -197,7 +197,7 @@ export default function HomePageMiddle({
                         : "No summary/brief available"}
                     </pre>
                   </div>
-                  <p className="mt-4 text-sm leading-7 text-slate-700">
+                  <p className="mt-4 break-words text-sm leading-7 text-slate-700">
                     {d?.remarks}
                   </p>
                   {/* <div className="mt-4 flex flex-wrap gap-2">
@@ -224,7 +224,7 @@ export default function HomePageMiddle({
                     hour12: true,
                   })}
                 </span>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <button
                     onClick={() => createRoom(d._id, d.roomId?._id)}
                     className="min-h-[42px] rounded-[14px] bg-slate-900 px-4 text-sm font-bold text-white transition hover:bg-slate-800"
