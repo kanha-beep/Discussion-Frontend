@@ -236,15 +236,21 @@
 .hero-1{
   font-size: 4.5rem;
   font-weight: bold;
+  line-height: 1.06;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 
 }
 .hero-2{
   font-size: 1.5rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   
 }
 .search-input{
   background-color: white;
   width: 500px;
+  max-width: calc(100vw - 32px);
   height: auto;
   padding: 15px;
   margin: 20px;
@@ -297,6 +303,35 @@
   background-color:#283E4A;
   color: white;
   border-color:#283E4A ;
+}
+@media (max-width: 767.98px){
+  .hero-1{
+    font-size: clamp(3.2rem, 14vw, 4.4rem);
+    line-height: 1.02;
+    margin-top: 1.5rem;
+  }
+  .hero-2{
+    font-size: 1rem;
+    line-height: 1.6;
+    padding-inline: 4px;
+  }
+  .search-input{
+    width: 100%;
+    margin: 16px 0;
+    padding: 14px 16px;
+  }
+  .button-2{
+    width: min(100%, 320px);
+    margin-right: 0;
+  }
+  .center{
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: 0;
+    box-shadow: none;
+    border-radius: 0;
+  }
 }
   {/* first div - left profile */}
 /* .main{
@@ -373,9 +408,28 @@
   padding: 5px;
   
   font-size: 16px;
+  width: 100%;
+  display: block;
+  color: black;
 }
 .list-group{
   padding: 15px;
+  margin-bottom: 0;
+}
+.list-group > li{
+  list-style: none;
+}
+.profile-button{
+  text-align: left;
+  border-left: 0;
+  border-right: 0;
+  outline: none;
+}
+.profile-button:hover{
+  background-color: #f8fafc;
+}
+.profile-button-last{
+  border-bottom: 1px solid;
 }
 .center{
   height: 90vh;

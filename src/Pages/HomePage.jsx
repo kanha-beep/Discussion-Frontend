@@ -429,8 +429,8 @@ export default function HomePage() {
               )}
             </div>
             <div
-              className="d-flex justify-content-center align-items-start gap-[20px]"
-              style={{ height: "45vh" }}
+              className="d-flex flex-column flex-lg-row justify-content-center align-items-stretch align-items-lg-start gap-[20px] w-100 overflow-x-hidden"
+              style={{ minHeight: "45vh", height: "auto" }}
             >
               {/* first div - left profile */}
               <HomePageLeft user={user} navigate={navigate} />

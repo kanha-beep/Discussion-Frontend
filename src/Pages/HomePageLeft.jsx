@@ -17,24 +17,30 @@ export default function HomePageLeft({ user, navigate }) {
           <li className="email text-truncate">{user?.email}</li>
           <li className="profile">Saved Discussions</li>
           <li className="profile">Meetings</li>
-          <button
-            onClick={() => navigate(`/profile/${user?._id}`)}
-            className="profile"
-          >
-            Mailbox
-          </button>
-          <button
-            onClick={() => navigate(`/profile/${user?._id}?tab=tests`)}
-            className="profile"
-          >
-            Tests
-          </button>
-          <button
-            onClick={() => navigate(`/profile/${user?._id}`)}
-            className="profile"
-          >
-            <span className="profile-1">View profile</span>
-          </button>
+          <li>
+            <button
+              onClick={() => navigate(`/profile/${user?._id}`)}
+              className="profile profile-button"
+            >
+              Mailbox
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => navigate(`/profile/${user?._id}?tab=tests`)}
+              className="profile profile-button"
+            >
+              Tests
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => navigate(`/profile/${user?._id}`)}
+              className="profile profile-button profile-button-last"
+            >
+              <span className="profile-1">View profile</span>
+            </button>
+          </li>
         </ul>
       </div>
     </div>

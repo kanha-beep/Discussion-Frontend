@@ -40,6 +40,7 @@ export function MainPageHeading({ user, onExploreMore, isVisible = true }) {
 
   return (
     <div
+      className="w-full px-3 px-sm-4"
       style={{
         minHeight: "80vh",
         display: "flex",
@@ -62,6 +63,7 @@ export function MainPageHeading({ user, onExploreMore, isVisible = true }) {
           justifyContent: "center",
           textAlign: "center",
           width: "100%",
+          maxWidth: "100%",
         }}
       >
         <h1 className="hero-1">
@@ -75,7 +77,7 @@ export function MainPageHeading({ user, onExploreMore, isVisible = true }) {
           share knowledge, and grow together.
         </p>
 
-        <div className="search-section">
+        <div className="search-section w-100 d-flex justify-content-center">
           <input
             type="search"
             placeholder="Search questions, topics, or users..."
@@ -85,7 +87,7 @@ export function MainPageHeading({ user, onExploreMore, isVisible = true }) {
           />
         </div>
 
-        <div className="flex w-full items-center justify-center gap-4 flex-wrap mx-auto">
+        <div className="flex w-full max-w-full items-center justify-center gap-4 flex-wrap mx-auto">
           <button
             className="button-2"
             onClick={() =>
