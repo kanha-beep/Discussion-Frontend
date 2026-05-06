@@ -224,10 +224,10 @@ export default function HomePageMiddle({
                     hour12: true,
                   })}
                 </span>
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <div className="discussion-card-actions-row flex min-w-0 items-center gap-2 overflow-x-auto pb-1">
                   <button
                     onClick={() => createRoom(d._id, d.roomId?._id)}
-                    className="min-h-[42px] rounded-[14px] bg-slate-900 px-4 text-sm font-bold text-white transition hover:bg-slate-800"
+                    className="shrink-0 min-h-[42px] rounded-[14px] bg-slate-900 px-4 text-sm font-bold text-white transition hover:bg-slate-800"
                   >
                     {d.roomId?._id ? "Join" : "Create"}
                   </button>
@@ -240,7 +240,7 @@ export default function HomePageMiddle({
                           title: `${primaryTopic} video call`,
                         })
                       }
-                      className="min-h-[42px] rounded-[14px] border border-cyan-200 bg-cyan-50 px-4 text-sm font-bold text-cyan-900 transition hover:bg-cyan-100"
+                      className="shrink-0 min-h-[42px] rounded-[14px] border border-cyan-200 bg-cyan-50 px-4 text-sm font-bold text-cyan-900 transition hover:bg-cyan-100"
                     >
                       <i className="bi bi-share-fill"></i> Share
                     </button>
@@ -251,13 +251,13 @@ export default function HomePageMiddle({
                         onClick={() =>
                           navigate(`/discussion-form-edit/${d?._id}`)
                         }
-                        className="min-h-[42px] rounded-[14px] border border-indigo-200 bg-indigo-50 px-4 text-sm font-bold text-indigo-900 transition hover:bg-indigo-100"
+                        className="shrink-0 min-h-[42px] rounded-[14px] border border-indigo-200 bg-indigo-50 px-4 text-sm font-bold text-indigo-900 transition hover:bg-indigo-100"
                       >
                         <i className="bi bi-pencil"></i>
                       </button>
                       <button
                         onClick={() => handleDeleteDiscussion(d?._id)}
-                        className="min-h-[42px] rounded-[14px] border border-rose-200 bg-rose-50 px-4 text-sm font-bold text-rose-700 transition hover:bg-rose-100"
+                        className="shrink-0 min-h-[42px] rounded-[14px] border border-rose-200 bg-rose-50 px-4 text-sm font-bold text-rose-700 transition hover:bg-rose-100"
                       >
                         {loading ? (
                           <span className="spinner-border spinner-border-sm me-2" />

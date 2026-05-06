@@ -87,7 +87,7 @@ export function MainPageHeading({ user, onExploreMore, isVisible = true }) {
           />
         </div>
 
-        <div className="flex w-full max-w-full items-center justify-center gap-4 flex-wrap mx-auto">
+        <div className="hero-actions flex w-full max-w-full items-center justify-center gap-3 mx-auto">
           <button
             className="button-2"
             onClick={() =>

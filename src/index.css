@@ -255,7 +255,6 @@
   padding: 15px;
   margin: 20px;
   border: none;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 10);
   border-radius: 10px;
  
 }
@@ -321,8 +320,15 @@
     padding: 14px 16px;
   }
   .button-2{
-    width: min(100%, 320px);
+    width: calc((100vw - 52px) / 2);
+    min-width: 0;
+    padding: 14px 12px;
+    font-size: 16px;
     margin-right: 0;
+  }
+  .hero-actions{
+    flex-wrap: nowrap;
+    gap: 12px;
   }
   .center{
     width: 100%;
@@ -683,6 +689,12 @@ border: 2px solid #283E4A;
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
+}
+.discussion-card-actions-row{
+  scrollbar-width: none;
+}
+.discussion-card-actions-row::-webkit-scrollbar{
+  display: none;
 }
 .discussion-action{
   border: 1px solid transparent;
